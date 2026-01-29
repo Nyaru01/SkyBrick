@@ -19,11 +19,7 @@ const LoaderText = () => {
         return () => clearInterval(interval);
     }, []);
 
-    useEffect(() => {
-        const audio = new Audio('/Sounds/shuffling.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(e => console.log('Audio autoplay blocked:', e));
-    }, []);
+    // Audio removed as it's now in IntroScreen
 
     return (
         <div className="h-6 flex items-center justify-center overflow-hidden mb-2">

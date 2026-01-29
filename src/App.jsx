@@ -24,7 +24,7 @@ function App() {
   return (
     <ErrorBoundary>
       {showIntro && <IntroScreen onComplete={() => setShowIntro(false)} />}
-      <div className={showIntro ? 'hidden' : ''}>
+      <div>
         <UpdateProvider>
           <SocketProvider>
             <VersionCheck />

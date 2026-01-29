@@ -5,20 +5,36 @@ export function IntroScreen({ onComplete }) {
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
-        // Play sound
-        const audio = new Audio('/Sounds/brand-logo-intro-352299.mp3');
-        audio.volume = 0.5; // Reasonable volume
-        audio.play().catch(err => console.error("Audio play failed:", err));
+        // Play brand sound
+        const brandAudio = new Audio('/Sounds/brand-logo-intro-352299.mp3');
+        brandAudio.volume = 0.5;
 
-        // Timer for 3.5 seconds (slightly longer than 3s to allow fade out)
+        // Play shuffling sound (as requested by user)
+        const shuffleAudio = new Audio('/Sounds/shuffling.mp3');
+        shuffleAudio.volume = 0.4;
+
+        const playSounds = async () => {
+            try {
+                await brandAudio.play();
+                // Slight delay for shuffling if needed, or concurrent
+                setTimeout(() => shuffleAudio.play().catch(e => console.error(e)), 500);
+            } catch (err) {
+                console.error("Audio play failed:", err);
+            }
+        };
+
+        playSounds();
+
+        // Timer for 3 seconds visible + transition
         const timer = setTimeout(() => {
             setIsVisible(false);
-            setTimeout(onComplete, 500); // Wait for exit animation
+            setTimeout(onComplete, 800); // 800ms fade out transition
         }, 3000);
 
         return () => {
             clearTimeout(timer);
-            audio.pause(); // Cleanup if unmounted early
+            brandAudio.pause();
+            shuffleAudio.pause();
         };
     }, [onComplete]);
 
@@ -26,7 +42,7 @@ export function IntroScreen({ onComplete }) {
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    initial={{ opacity: 0 }}
+                    initial={{ opacity: 1 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.5 }}
@@ -41,7 +57,8 @@ export function IntroScreen({ onComplete }) {
                         <img
                             src="/intro_logo.png"
                             alt="Nyaru Studio"
-                            className="w-full h-auto object-contain drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]"
+                            className="w-full h-auto object-contain"
+                            style={{ maskImage: 'radial-gradient(circle, black 60%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle, black 60%, transparent 100%)' }}
                         />
                     </motion.div>
                 </motion.div>

@@ -38,19 +38,28 @@ const CRITICAL_AUDIO = [
 
 export default function ImagePreloader({ children }) {
     const [isLoading, setIsLoading] = useState(true);
-    const [progress, setProgress] = useState(0);
+    const [realProgress, setRealProgress] = useState(0);
+    const [visualProgress, setVisualProgress] = useState(0);
 
     useEffect(() => {
         let mounted = true;
         let loadedCount = 0;
         const total = CRITICAL_IMAGES.length + CRITICAL_AUDIO.length;
         const startTime = Date.now();
-        const minLoadingTime = 4000; // Minimum 4 seconds to show the premium loader
+        const minLoadingTime = 8500; // 3s Intro + 5s Loading Screen
+
+        // Simulation timer for visual progress (0 -> 100 over minLoadingTime)
+        const progressInterval = setInterval(() => {
+            if (!mounted) return;
+            const elapsedTime = Date.now() - startTime;
+            const timeRatio = Math.min(1, elapsedTime / minLoadingTime);
+            setVisualProgress(Math.round(timeRatio * 100));
+        }, 50);
 
         const handleAssetLoad = () => {
             if (!mounted) return;
             loadedCount++;
-            setProgress(Math.round((loadedCount / total) * 100));
+            setRealProgress(Math.round((loadedCount / total) * 100));
 
             if (loadedCount === total) {
                 const elapsedTime = Date.now() - startTime;
@@ -58,6 +67,7 @@ export default function ImagePreloader({ children }) {
 
                 setTimeout(() => {
                     if (mounted) setIsLoading(false);
+                    clearInterval(progressInterval);
                 }, remainingTime);
             }
         };
@@ -84,11 +94,13 @@ export default function ImagePreloader({ children }) {
         };
     }, []);
 
+    const displayProgress = Math.min(realProgress, visualProgress);
+
     return (
         <>
             {isLoading && (
                 <div className="fixed inset-0 z-[9999]">
-                    <SkyjoLoader progress={progress} />
+                    <SkyjoLoader progress={displayProgress} />
                 </div>
             )}
             <div
