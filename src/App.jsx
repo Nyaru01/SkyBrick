@@ -33,17 +33,19 @@ function App() {
             <Toaster
               position="bottom-center"
               toastOptions={{
-                className: '!bg-slate-900/90 !backdrop-blur-xl !border !border-white/10 !text-white !rounded-2xl !shadow-2xl',
+                className: '!bg-slate-900/95 !backdrop-blur-xl !border !border-white/10 !text-white !rounded-2xl !shadow-2xl',
                 style: {
-                  background: 'rgba(15, 23, 42, 0.9)',
+                  background: 'rgba(15, 23, 42, 0.95)',
                   color: '#fff',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '16px',
-                  padding: '12px 20px',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
-                  fontSize: '14px',
-                  fontWeight: '600',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '20px',
+                  padding: '16px 24px', // Bigger padding
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                  fontSize: '16px', // Bigger font
+                  fontWeight: '700',
+                  letterSpacing: '0.025em',
+                  maxWidth: '500px', // Wider
                 },
                 success: {
                   iconTheme: {
@@ -51,7 +53,8 @@ function App() {
                     secondary: 'white',
                   },
                   style: {
-                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    background: 'rgba(6, 78, 59, 0.9)', // Slight tint for success
                   }
                 },
                 error: {
@@ -60,7 +63,8 @@ function App() {
                     secondary: 'white',
                   },
                   style: {
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    background: 'rgba(127, 29, 29, 0.9)', // Slight tint for error
                   }
                 },
               }}

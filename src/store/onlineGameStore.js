@@ -93,13 +93,12 @@ export const useOnlineGameStore = create((set, get) => ({
 
             socket.on('new_player_joined', ({ playerName, emoji }) => {
                 // Convert avatarId to real emoji (emoji field contains the avatar ID like 'cat')
-                const avatar = AVATARS.find(a => a.id === emoji);
-                const displayEmoji = avatar?.emoji || '👤';
+                // Avatar removed from notification text as per user request for cleaner UI
 
                 set({
                     lastNotification: {
                         type: 'info',
-                        message: `${displayEmoji} ${playerName} a rejoint la partie !`,
+                        message: `${playerName} a rejoint la partie !`,
                         sound: 'join', // Custom flag to trigger sound
                         timestamp: Date.now()
                     }
@@ -110,7 +109,7 @@ export const useOnlineGameStore = create((set, get) => ({
                 set({
                     lastNotification: {
                         type: 'success',
-                        message: "🚀 Invitation envoyée !",
+                        message: "Invitation envoyée !",
                         timestamp: Date.now()
                     }
                 });
@@ -120,7 +119,7 @@ export const useOnlineGameStore = create((set, get) => ({
                 set({
                     lastNotification: {
                         type: 'error',
-                        message: reason === 'OFFLINE' ? "👤 L'ami est hors ligne" : "❌ Échec de l'invitation",
+                        message: reason === 'OFFLINE' ? "L'ami est hors ligne" : "Échec de l'invitation",
                         timestamp: Date.now()
                     }
                 });
@@ -248,7 +247,7 @@ export const useOnlineGameStore = create((set, get) => ({
                     players: updatedPlayers,
                     lastNotification: {
                         type: 'info',
-                        message: `${playerEmoji || '👤'} ${playerName} a quitté la partie`,
+                        message: `${playerName} a quitté la partie`,
                         timestamp: Date.now()
                     }
                 });

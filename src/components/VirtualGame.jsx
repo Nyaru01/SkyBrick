@@ -355,7 +355,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
             const { type, message } = onlineLastNotificationRaw;
             if (type === 'error') toast.error(message);
             else if (type === 'success') toast.success(message);
-            else toast(message, { icon: 'ℹ️' }); // Default info
+            else toast(message); // Default info - No icon
 
             // If we got an error or info, likely the pending state should be cleared (especially error)
             if (onlineLastNotificationRaw.type === 'error') {
@@ -1075,7 +1075,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                         </Button>
 
                         <div className="text-center space-y-0.5">
-                            <h2 className="text-xl font-black text-white tracking-tighter flex items-center justify-center gap-2">
+                            <h2 className="text-xl font-black text-white tracking-widest flex items-center justify-center gap-2">
                                 <Wifi className="h-6 w-6 text-blue-400 animate-pulse" />
                                 SALON EN LIGNE
                             </h2>
