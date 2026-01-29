@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, MessageSquare, Eye, Archive, Trash2, RefreshCw, X, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmModal from './ui/ConfirmModal';
 
 export function AdminDashboard({ adminPassword, onClose }) {
     const [activeTab, setActiveTab] = useState('feedbacks');
@@ -9,6 +10,7 @@ export function AdminDashboard({ adminPassword, onClose }) {
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({ total: 0, new: 0, read: 0 });
     const [authError, setAuthError] = useState(false);
+    const [feedbackToDelete, setFeedbackToDelete] = useState(null);
 
     const fetchFeedbacks = async () => {
         setLoading(true);
@@ -89,11 +91,15 @@ export function AdminDashboard({ adminPassword, onClose }) {
         }
     };
 
-    const deleteFeedback = async (id) => {
-        if (!confirm('Supprimer ce feedback ?')) return;
+    const requestDeleteFeedback = (id) => {
+        setFeedbackToDelete(id);
+    };
+
+    const performDeleteFeedback = async () => {
+        if (!feedbackToDelete) return;
 
         try {
-            await fetch(`/api/feedback/admin/feedbacks/${id}`, {
+            await fetch(`/api/feedback/admin/feedbacks/${feedbackToDelete}`, {
                 method: 'DELETE',
                 headers: { 'x-admin-auth': adminPassword }
             });
@@ -103,6 +109,7 @@ export function AdminDashboard({ adminPassword, onClose }) {
         } catch (error) {
             toast.error('Erreur suppression');
         }
+        setFeedbackToDelete(null);
     };
 
 
@@ -169,7 +176,7 @@ export function AdminDashboard({ adminPassword, onClose }) {
                             <FeedbackList
                                 feedbacks={feedbacks}
                                 onUpdate={updateStatus}
-                                onDelete={deleteFeedback}
+                                onDelete={requestDeleteFeedback}
                             />
                         ) : (
                             <UserList users={onlineUsers} />
@@ -214,6 +221,16 @@ export function AdminDashboard({ adminPassword, onClose }) {
                 </div>
 
                 {renderContent()}
+
+                <ConfirmModal
+                    isOpen={!!feedbackToDelete}
+                    onClose={() => setFeedbackToDelete(null)}
+                    onConfirm={performDeleteFeedback}
+                    title="Supprimer le feedback ?"
+                    message="Cette action est irréversible. Voulez-vous vraiment supprimer ce message de la base de données ?"
+                    confirmText="Supprimer"
+                    variant="danger"
+                />
             </div>
         </div>
     );
@@ -323,18 +340,19 @@ function FeedbackList({ feedbacks, onUpdate, onDelete }) {
                         <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap font-medium">{f.content}</p>
                     </div>
 
-                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {f.status !== 'read' && (
-                            <button
-                                onClick={() => onUpdate(f.id, 'read')}
-                                className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Eye className="w-3.5 h-3.5" />
-                                    Archive_Read
-                                </div>
-                            </button>
-                        )}
+                    <div className="flex items-center justify-end gap-3">
+                        <button
+                            onClick={() => onUpdate(f.id, f.status === 'read' ? 'new' : 'read')}
+                            className={`px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95 ${f.status === 'read'
+                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white shadow-emerald-500/10'
+                                : 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-indigo-500/20'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                {f.status === 'read' ? <Check className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                {f.status === 'read' ? 'Lu' : 'Marquer_Lu'}
+                            </div>
+                        </button>
                         <button
                             onClick={() => onDelete(f.id)}
                             className="p-2.5 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-xl transition-all border border-red-500/20 active:scale-95"
