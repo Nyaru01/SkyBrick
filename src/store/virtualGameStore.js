@@ -178,11 +178,11 @@ export const useVirtualGameStore = create((set, get) => ({
                 const executeDrawWithAnimation = (sourceId, sourceCard, finalStateCalc) => {
                     // 1. Set notification
                     set({
-                        lastNotification: {
-                            type: 'info',
-                            message: `🤖 ${currentPlayer.name} ${sourceId === 'deck-pile' ? 'a pioché' : `a pris (${sourceCard.value})`}`,
-                            timestamp: Date.now()
-                        }
+                        // lastNotification: {
+                        //     type: 'info',
+                        //     message: `🤖 ${currentPlayer.name} ${sourceId === 'deck-pile' ? 'a pioché' : `a pris (${sourceCard.value})`}`,
+                        //     timestamp: Date.now()
+                        // }
                     });
 
                     // 2. Trigger Animation
@@ -251,11 +251,11 @@ export const useVirtualGameStore = create((set, get) => ({
                 if (decision.action === 'REPLACE') {
                     // 1. Notify
                     set({
-                        lastNotification: {
-                            type: 'info',
-                            message: `🤖 ${currentPlayer.name} a remplacé une carte`,
-                            timestamp: Date.now()
-                        }
+                        // lastNotification: {
+                        //     type: 'info',
+                        //     message: `🤖 ${currentPlayer.name} a remplacé une carte`,
+                        //     timestamp: Date.now()
+                        // }
                     });
 
                     // 2. Animate
@@ -283,11 +283,11 @@ export const useVirtualGameStore = create((set, get) => ({
                     // DISCARD AND REVEAL
                     // 1. Notify
                     set({
-                        lastNotification: {
-                            type: 'info',
-                            message: `🤖 ${currentPlayer.name} a défaussé et retourné une carte`,
-                            timestamp: Date.now()
-                        }
+                        // lastNotification: {
+                        //     type: 'info',
+                        //     message: `🤖 ${currentPlayer.name} a défaussé et retourné une carte`,
+                        //     timestamp: Date.now()
+                        // }
                     });
 
                     // 2. Animate: Center -> Discard Pile

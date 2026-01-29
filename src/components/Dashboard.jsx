@@ -109,7 +109,7 @@ export default function Dashboard() {
     const isManualGameActive = gameStatus === 'PLAYING' && (effectiveTab === 'game' || effectiveTab === 'home');
     const isVirtualGameActive = effectiveTab === 'virtual' && (!!virtualGameState || onlineGameStarted);
 
-    useBackgroundMusic(isManualGameActive || isVirtualGameActive);
+    useBackgroundMusic(isManualGameActive);
 
     const [confirmConfig, setConfirmConfig] = useState({
         isOpen: false,
@@ -584,19 +584,6 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen">
             {/* Bouton Quitter Spécifique au jeu en ligne (Fix Plan) */}
-            {isGameInProgress && (
-                <div className="fixed top-4 left-4 z-[100] animate-in fade-in zoom-in duration-300">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleQuitOnlineGame}
-                        className="bg-red-500/80 hover:bg-red-600 text-white font-black text-xs px-4 py-2 h-10 rounded-full backdrop-blur-md shadow-xl border border-red-400/30 flex items-center gap-2"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        QUITTER
-                    </Button>
-                </div>
-            )}
 
             <div className={`max-w-3xl mx-auto p-3 ${isVirtualGameActive ? 'pb-2' : 'pb-24'}`}>
                 <AnimatePresence mode="wait">

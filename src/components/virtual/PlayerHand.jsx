@@ -94,7 +94,7 @@ const PlayerHand = memo(function PlayerHand({
                     style={{
                         fontSize: '10px',
                         zIndex: 50,
-                        top: '-12px', // Positioned lower
+                        top: '-34px', // Positioned lower
                     }}
                     id={`player-badge-${player.id}`}
                 >

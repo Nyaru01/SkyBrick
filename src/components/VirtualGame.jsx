@@ -236,6 +236,11 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     // Browser notifications for lobby
     const { requestPermission, sendNotification, isTabHidden, hasPermission } = useNotifications();
 
+    // Music Hook - Correctly placed
+    const {
+        playRandomTrack
+    } = useBackgroundMusic(screen === 'game' && activeGameState?.phase !== 'FINISHED');
+
     // Save pseudo and emoji to localStorage when they change
     useEffect(() => {
         if (aiConfig.playerName) {
@@ -1293,7 +1298,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                         {/* Actions Grid */}
                         <div className="grid grid-cols-1 gap-3 pt-2">
                             <Button
-                                className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg text-lg font-bold relative group overflow-hidden rounded-xl"
+                                className="w-full h-14 bg-[#1A4869] hover:bg-[#153a54] text-white shadow-lg text-lg font-bold relative group overflow-hidden rounded-xl"
                                 onClick={() => {
                                     setPlayerInfo(myPseudo || 'Joueur', myAvatarId);
                                     createRoom();
@@ -1951,6 +1956,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     const isMyTurn = !isInitialReveal && activeGameState.currentPlayerIndex === myPlayerIndex;
     const isOpponentTurn = !isInitialReveal && activeGameState.currentPlayerIndex === opponentIndex;
 
+
     return (
         <div
             className={cn(
@@ -1959,60 +1965,64 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
             )}
         >
             {/* Header - ultra-thin single line with glass-style elements */}
+            {/* Header - Unified Pill Container */}
             <div className="flex items-center justify-between px-3 py-1.5 shrink-0 z-50">
-                <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                >
+                {/* Visual Container for all controls */}
+                <div className="flex items-center w-full justify-between bg-slate-900/60 border border-white/10 backdrop-blur-xl rounded-2xl p-1 shadow-2xl relative overflow-hidden">
+                    {/* Quit Button (Left) */}
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleBackToMenu}
-                        className="h-8 px-3 text-[11px] font-black uppercase tracking-tighter bg-slate-800/40 hover:bg-slate-700/60 text-slate-300 border border-white/5 rounded-full backdrop-blur-md shadow-lg flex items-center gap-1 transition-all active:scale-95"
+                        className="relative h-9 px-4 text-[11px] font-black uppercase tracking-wider bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/10 rounded-xl transition-all active:scale-95 flex items-center gap-2"
                     >
-                        <ArrowLeft className="h-3 w-3" />
+                        <ArrowLeft className="h-3.5 w-3.5" />
                         Quitter
                     </Button>
-                </motion.div>
 
-                <div className="flex items-center gap-2">
-                    {/* Round Indicator Pill */}
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/40 border border-white/5 backdrop-blur-md shadow-lg">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Manche
-                        </span>
-                        <span className="text-xs font-black text-white font-mono bg-indigo-500/30 px-1.5 py-0.5 rounded-md border border-indigo-400/30">
-                            {activeRoundNumber}
-                        </span>
+                    {/* Stats & Tools (Right) */}
+                    <div className="flex items-center gap-2">
+                        {/* Round Counter */}
+                        <div className="flex items-center gap-2 px-3 h-9 rounded-xl bg-slate-800/50 border border-white/5 mx-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                Manche
+                            </span>
+                            <span className="text-sm font-black text-white font-mono bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.1)]">
+                                {activeRoundNumber}
+                            </span>
+                        </div>
+
+                        {/* Music Controls Group */}
+                        <div className="flex items-center gap-1 p-0.5 bg-slate-800/30 rounded-xl border border-white/5">
+                            {/* Shuffle Button */}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={playRandomTrack}
+                                disabled={!musicEnabled}
+                                className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Changer de musique"
+                            >
+                                <Sparkles className="h-4 w-4" />
+                            </Button>
+
+                            {/* Toggle Button */}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={toggleMusic}
+                                className={cn(
+                                    "h-8 w-8 p-0 rounded-lg transition-all duration-300",
+                                    musicEnabled
+                                        ? "bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                                        : "text-slate-500 hover:bg-slate-700/50"
+                                )}
+                                title={musicEnabled ? "Couper la musique" : "Activer la musique"}
+                            >
+                                {musicEnabled ? <Music2 className="h-4 w-4 animate-pulse" /> : <Music className="h-4 w-4" />}
+                            </Button>
+                        </div>
                     </div>
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleMusic}
-                        className={cn(
-                            "h-8 w-8 p-0 rounded-full transition-all duration-500 relative overflow-visible border border-white/5 backdrop-blur-md shadow-lg",
-                            musicEnabled
-                                ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-400/30"
-                                : "bg-slate-800/40 text-slate-500 hover:bg-slate-700/60"
-                        )}
-                        title={musicEnabled ? "Couper la musique" : "Activer la musique"}
-                    >
-                        {/* Ping effect behind the button */}
-                        {musicEnabled && (
-                            <motion.span
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="absolute inset-0 rounded-full bg-emerald-400/20 animate-[ping_2s_ease-in-out_infinite]"
-                            />
-                        )}
-
-                        {musicEnabled ? (
-                            <Music className="h-3.5 w-3.5 relative z-10" />
-                        ) : (
-                            <Music2 className="h-3.5 w-3.5 opacity-50 relative z-10" />
-                        )}
-                    </Button>
                 </div>
             </div>
 
@@ -2041,7 +2051,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                             boxShadow: '0 0 20px rgba(99, 102, 241, 0.4), 0 4px 15px rgba(0, 0, 0, 0.3)'
                         }}
                     >
-                        <span className="text-2xl">👆</span>
+
                         <div className="flex flex-col items-center">
                             <span className="font-bold text-white text-sm uppercase tracking-wide">
                                 Retournez 2 cartes
@@ -2119,9 +2129,9 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                         activeGameState.currentPlayerIndex !== myPlayerIndex && !isOnlineMode
                                             ? (isAIThinking ? `🤖 ${currentPlayer?.name} réfléchit...` : `🤖 Tour de ${currentPlayer?.name}`)
                                             : (activeGameState.turnPhase === 'DRAW' ? 'Piocher ou défausser' :
-                                                activeGameState.turnPhase === 'REPLACE_OR_DISCARD' ? '👆 Jouez dans votre grille ou défaussez' :
-                                                    activeGameState.turnPhase === 'MUST_REPLACE' ? '👆 Remplacez une de vos cartes' :
-                                                        activeGameState.turnPhase === 'MUST_REVEAL' ? '👆 Retournez une carte cachée' : ''))
+                                                activeGameState.turnPhase === 'REPLACE_OR_DISCARD' ? 'Jouez dans votre grille ou défaussez' :
+                                                    activeGameState.turnPhase === 'MUST_REPLACE' ? 'Remplacez une de vos cartes' :
+                                                        activeGameState.turnPhase === 'MUST_REVEAL' ? 'Retournez une carte cachée' : ''))
                             }
                             isAIThinking={isAIThinking}
                         />

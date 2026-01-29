@@ -122,8 +122,12 @@ export const useBackgroundMusic = (shouldPlay = false) => {
     // Keep shouldPlayRef in sync
     shouldPlayRef.current = shouldPlay;
 
+    const playGenerationRef = useRef(0);
+
     // Play a specific track using Web Audio API
     const playTrack = useCallback(async (trackUrl) => {
+        const currentGeneration = ++playGenerationRef.current; // Increment generation
+
         const ctx = getAudioContext();
         if (!ctx) return;
 
@@ -137,14 +141,13 @@ export const useBackgroundMusic = (shouldPlay = false) => {
             }
         }
 
-        // Stop current source if playing
+        // Stop current source immediately
         if (sourceNodeRef.current) {
             try {
-                sourceNodeRef.current.onended = null; // Remove old handler
+                sourceNodeRef.current.onended = null;
                 sourceNodeRef.current.stop();
-            } catch (e) {
-                // Already stopped
-            }
+            } catch (e) { }
+            sourceNodeRef.current = null;
         }
 
         // Load buffer if not cached
@@ -152,11 +155,24 @@ export const useBackgroundMusic = (shouldPlay = false) => {
         const buffer = await loadAudioBuffer(trackUrl);
         isLoadingRef.current = false;
 
+        // If a new play request started while we were loading, abort this one
+        if (currentGeneration !== playGenerationRef.current) {
+            return;
+        }
+
         if (!buffer) return;
 
         // Check if we should still be playing
         if (!shouldPlayRef.current || !useGameStore.getState().musicEnabled) {
             return;
+        }
+
+        // Double check stop before creating new source (paranoid check)
+        if (sourceNodeRef.current) {
+            try {
+                sourceNodeRef.current.onended = null;
+                sourceNodeRef.current.stop();
+            } catch (e) { }
         }
 
         // Create new source
@@ -242,7 +258,27 @@ export const useBackgroundMusic = (shouldPlay = false) => {
         };
     }, [stopPlayback]);
 
+    // Play random track manually
+    const playRandomTrack = useCallback(() => {
+        if (!musicEnabled) return;
+
+        // Resume context just in case
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'suspended') {
+            ctx.resume().catch(console.error);
+        }
+
+        // Just pick next one in shuffle
+        currentTrackIndexRef.current++;
+        if (currentTrackIndexRef.current >= PLAYLIST.length) {
+            shuffledPlaylistRef.current = shuffleArray(PLAYLIST);
+            currentTrackIndexRef.current = 0;
+        }
+        playTrack(shuffledPlaylistRef.current[currentTrackIndexRef.current]);
+    }, [musicEnabled, playTrack]);
+
     return {
-        isPlaying
+        isPlaying,
+        playRandomTrack
     };
 };
