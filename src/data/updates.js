@@ -1,11 +1,28 @@
 export const UPDATES = [
     {
+        id: 13,
+        version: "2.1.0",
+        date: "29 Janv. 2026",
+        title: "Raffinement UI & Gameplay",
+        description: "Optimisation de l'interface de jeu et du confort visuel.",
+        isNew: true,
+        type: "minor",
+        changes: [
+            { text: "Interface de jeu : Nouveau Header unifié 'Pill Design' avec animations Glassmorphism", type: "improve" },
+            { text: "Notifications IA : Suppression des messages intrusifs pendant le tour de l'IA", type: "improve" },
+            { text: "Confort Visuel : Ajustement de la position des badges joueurs et harmonisation des couleurs (#1A4869)", type: "improve" },
+            { text: "Lobby : La musique ne joue plus pendant la phase de préparation", type: "fix" },
+            { text: "Musique : Ajout d'un bouton 'Musique Aléatoire' 🎵", type: "feat" }
+        ],
+        image: "/premium-bg.jpg"
+    },
+    {
         id: 12,
         version: "2.0.9",
         date: "29 Janv. 2026",
         title: "Chat Privé & Notifications Premium",
         description: "Communiquez en temps réel avec vos amis sans quitter votre partie.",
-        isNew: true,
+        isNew: false,
         type: "major",
         changes: [
             { text: "Chat Privé : Interface style WhatsApp pour discuter en direct", type: "feat" },

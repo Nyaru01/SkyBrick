@@ -119,6 +119,10 @@ Cette section documente les solutions techniques apportées aux problèmes compl
 - **UI Custom :** Intégration de `ConfirmModal` (design Néon/Glass) dans `SocialMenu.jsx`.
 - **Logique Serveur :** Ajout de la fonction `deleteFriend` manquante dans `socialStore.js` qui appelle la route API `/api/social/friends/delete`. La suppression est une action strictement **serveur** (requiert une mise à jour DB).
 
+### 3. Gestion Audio & UI
+- **Pill Header :** Unification des contrôles de jeu (Quitter, Son, Manche) dans un conteneur flottant "Pill" en verre dépoli.
+- **Hook Audio :** `useBackgroundMusic` a été refactorisé pour empêcher le lancement de plusieurs pistes simultanées (Race Condition) et restreint aux phases de jeu actives (pas de musique en lobby).
+
 ---
 
-*Documentation mise à jour le 29 Janvier 2026 - Correctifs Host & Social.*
+*Documentation mise à jour le 29 Janvier 2026 (v2.1.0) - Refonte UI & Audio.*
