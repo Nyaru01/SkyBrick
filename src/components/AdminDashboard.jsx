@@ -69,6 +69,11 @@ export function AdminDashboard({ adminPassword, onClose }) {
     };
 
     useEffect(() => {
+        fetchFeedbacks();
+        fetchOnlineUsers();
+    }, []);
+
+    useEffect(() => {
         if (activeTab === 'feedbacks') fetchFeedbacks();
         if (activeTab === 'live') fetchOnlineUsers();
     }, [activeTab]);

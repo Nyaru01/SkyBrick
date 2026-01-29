@@ -5,7 +5,7 @@ const MESSAGES = [
     "Mélange des cartes...",
     "Alignement des colonnes...",
     "Calcul des probabilités...",
-    "Attention aux malus...",
+    "Hésite pas à piocher",
     "Prêt à jouer ?"
 ];
 
@@ -62,10 +62,10 @@ export default function SkyjoLoader({ progress = 0 }) {
                     transition={{ delay: 0.2 }}
                     className="mb-12 flex flex-col items-center"
                 >
-                    <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-sky-200 to-sky-500 drop-shadow-[0_0_15px_rgba(14,165,233,0.5)] tracking-tighter">
+                    <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#9E67F2] to-[#748EF8] drop-shadow-[0_0_15px_rgba(158,103,242,0.5)] tracking-tighter">
                         SKYJO
                     </h1>
-                    <div className="h-1 w-24 bg-sky-500 rounded-full mt-2 shadow-[0_0_10px_rgba(14,165,233,0.8)]" />
+                    <div className="h-1 w-24 bg-gradient-to-r from-[#9E67F2] to-[#748EF8] rounded-full mt-2 shadow-[0_0_10px_rgba(158,103,242,0.8)]" />
                 </motion.div>
 
                 {/* Progress Bar Container */}
@@ -75,14 +75,14 @@ export default function SkyjoLoader({ progress = 0 }) {
                     <LoaderText />
 
                     <div className="flex justify-between items-end px-1">
-                        <span className="text-xs font-bold text-sky-400 uppercase tracking-widest">Chargement</span>
+                        <span className="text-xs font-bold text-[#9E67F2] uppercase tracking-widest">Chargement</span>
                         <span className="text-xl font-black text-white tabular-nums">{Math.round(progress)}%</span>
                     </div>
 
                     {/* The Bar Itself */}
                     <div className="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden border border-white/10 shadow-inner backdrop-blur-sm">
                         <motion.div
-                            className="h-full bg-gradient-to-r from-sky-600 via-blue-500 to-indigo-500 relative"
+                            className="h-full bg-gradient-to-r from-[#9E67F2] to-[#748EF8] relative"
                             initial={{ width: "0%" }}
                             animate={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
                             transition={{ ease: "circOut", duration: 0.5 }}
