@@ -1,0 +1,695 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&display=swap');
+@import './styles/HaloEffects.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Outfit', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Force dark mode regardless of system theme */
+  color-scheme: dark only;
+  color: #e2e8f0;
+  background-color: #0f172a;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Force light text globally - override system theme */
+html,
+body,
+#root {
+  color-scheme: dark only !important;
+  color: #e2e8f0 !important;
+}
+
+/* Force light text in glass containers */
+.glass-premium,
+.glass-dark {
+  color: #e2e8f0 !important;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  /* iOS safe area insets for notch and home indicator */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  /* Skyjo Image Background */
+  background: url('/bg-skyjo.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-color: #0f172a;
+  background-blend-mode: overlay;
+}
+
+/* Overlay sombre sur le background avec blur */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Mobile optimizations */
+button,
+a,
+label,
+input {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* PWA specific: Prevent selection by default */
+body.pwa {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Allow selection explicitly where needed */
+.allow-pwa-select,
+.allow-pwa-select * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Gradient mask for horizontal scroll fade */
+.mask-linear-fade {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8px, black calc(100% - 8px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 8px, black calc(100% - 8px), transparent);
+}
+
+/* =============================================== */
+/* DESIGN PREMIUM - Palette de couleurs enrichie  */
+/* =============================================== */
+
+/* Glassmorphisme premium */
+.glass-premium {
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Classe explicite pour forcer le mode sombre */
+.glass-dark {
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+}
+
+/* =============================================== */
+/* DESIGN SYSTEM - Semantic Colors & Typography   */
+/* =============================================== */
+
+:root {
+  /* Semantic color variables */
+  --color-player-accent: #2ECC71;
+  --color-opponent-accent: #6B7280;
+  --color-background: #1A1B2E;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #94A3B8;
+}
+
+/* Typography hierarchy */
+.text-h1 {
+  font-size: 18pt;
+  font-weight: 700;
+  font-family: 'Outfit', system-ui, sans-serif;
+}
+
+.text-body {
+  font-size: 14pt;
+  font-weight: 400;
+  font-family: 'Outfit', system-ui, sans-serif;
+}
+
+.text-small {
+  font-size: 12pt;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* Score flash animation for feedback */
+@keyframes score-flash {
+
+  0%,
+  100% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.animate-score-flash {
+  animation: score-flash 0.4s ease-out;
+}
+
+/* =============================================== */
+/* FORCED LIGHT TEXT - Override system theme       */
+/* These rules apply globally regardless of theme  */
+/* =============================================== */
+
+/* Force light text on all slate classes - no .dark dependency */
+.text-slate-900 {
+  color: #f1f5f9 !important;
+}
+
+.text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.text-slate-500 {
+  color: #64748b !important;
+}
+
+.text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+.text-slate-200 {
+  color: #e2e8f0 !important;
+}
+
+.text-slate-100 {
+  color: #f1f5f9 !important;
+}
+
+/* Global text color force */
+html,
+body,
+#root {
+  color: #e2e8f0 !important;
+  color-scheme: dark only !important;
+}
+
+/* Glass containers always have light text */
+.glass-premium,
+.glass-dark {
+  color: #e2e8f0 !important;
+}
+
+/* Override any system theme preferences */
+@media (prefers-color-scheme: light) {
+
+  html,
+  body,
+  #root {
+    color: #e2e8f0 !important;
+    color-scheme: dark only !important;
+  }
+
+  .glass-premium,
+  .glass-dark {
+    color: #e2e8f0 !important;
+  }
+}
+
+.dark .bg-slate-100 {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: rgba(51, 65, 85, 0.3) !important;
+}
+
+.dark .bg-white {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+}
+
+/* Force dark backgrounds for all white opacity variants */
+.dark .bg-white\/90,
+.dark .bg-white\/85,
+.dark .bg-white\/80,
+.dark .bg-white\/70,
+.dark .bg-white\/60,
+.dark .bg-white\/50,
+.dark .bg-white\/40,
+.dark .bg-white\/30,
+.dark .bg-white\/20,
+.dark .bg-white\/10,
+.dark .bg-white\/5 {
+  background-color: rgba(30, 41, 59, 0.85) !important;
+}
+
+/* Force dark backgrounds for light slate variants */
+.dark .bg-slate-50\/90,
+.dark .bg-slate-100\/90,
+.dark .bg-slate-50\/80,
+.dark .bg-slate-100\/80 {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+/* Force dark backgrounds for sky/emerald/amber light variants in rankings */
+.dark .bg-sky-50,
+.dark .bg-emerald-50,
+.dark .bg-emerald-50\/90,
+.dark .bg-amber-50,
+.dark .bg-amber-50\/80 {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+
+.dark .border-slate-200 {
+  border-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+.dark .border-slate-300 {
+  border-color: rgba(71, 85, 105, 0.5) !important;
+}
+
+/* Effets de glow */
+.shadow-glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3),
+    0 0 40px rgba(16, 185, 129, 0.1);
+}
+
+.shadow-glow-gold {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4),
+    0 0 40px rgba(245, 158, 11, 0.2);
+}
+
+.shadow-glow-rose {
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
+}
+
+/* Dégradés premium */
+.gradient-gold {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+}
+
+.gradient-silver {
+  background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 50%, #64748b 100%);
+}
+
+.gradient-bronze {
+  background: linear-gradient(135deg, #fcd9b6 0%, #c2824a 50%, #92400e 100%);
+}
+
+.gradient-winner {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+}
+
+/* Animation shimmer (effet brillance) */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Animation float (flottement subtil) */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Animation pulse glow */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.5),
+      0 0 50px rgba(16, 185, 129, 0.2);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Animation pulse-slow pour le halo du joueur actif */
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 30px rgba(52, 211, 153, 0.6), 0 0 60px rgba(52, 211, 153, 0.3);
+  }
+
+  50% {
+    opacity: 0.95;
+    box-shadow: 0 0 50px rgba(52, 211, 153, 0.8), 0 0 80px rgba(52, 211, 153, 0.4);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2.5s ease-in-out infinite;
+}
+
+/* Animation scale-in pour les cartes */
+@keyframes scale-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out forwards;
+}
+
+/* Animation bounce-in pour badges */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Transitions fluides pour les cartes */
+.card-hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Animation shake pour les pénalités (score doublé) */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-4px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* Animation score-pop pour mise en valeur des scores */
+@keyframes score-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-score-pop {
+  animation: score-pop 0.3s ease-out;
+}
+
+/* Animation count-up glow pour les totaux */
+@keyframes count-glow {
+  0% {
+    text-shadow: 0 0 0 transparent;
+  }
+
+  50% {
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+  }
+
+  100% {
+    text-shadow: 0 0 0 transparent;
+  }
+}
+
+.animate-count-glow {
+  animation: count-glow 0.6s ease-out;
+}
+
+/* Animation pour score négatif (bonus) */
+@keyframes sparkle {
+
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(1.3) drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 0.8s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-shimmer,
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-scale-in,
+  .animate-bounce-in {
+    animation: none;
+  }
+
+  .card-hover-lift:hover {
+    transform: none;
+  }
+}
+
+/* =============================================== */
+/* 3D CARD FLIP UTILITIES                         */
+/* =============================================== */
+
+/* Perspective container for 3D effects */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Preserve 3D transforms on children */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Hide back face when rotated */
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Rotate Y 180 degrees */
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Card flip animation keyframes */
+@keyframes card-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+
+  100% {
+    transform: rotateY(180deg);
+  }
+}
+
+.animate-card-flip {
+  animation: card-flip 0.5s ease-in-out;
+}
+
+/* Glow effect for active cards */
+@keyframes card-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+
+  50% {
+    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+.animate-card-glow {
+  animation: card-glow 1.5s ease-in-out infinite;
+}
+
+/* =============================================== */
+/* SPECIAL EFFECTS - LIVING BORDER                */
+/* =============================================== */
+
+@keyframes border-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes border-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-border-pulse {
+  animation: border-pulse 3s ease-in-out infinite;
+}
+
+.animate-border-spin {
+  animation: border-spin 4s linear infinite;
+}
+
+/* Slow spin animation for update icon */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* =============================================== */
+/* RESPONSIVE SCALING FOR SMALL SCREENS           */
+/* =============================================== */
+
+/* Scale down the game layout on small viewport heights */
+@media (max-height: 750px) {
+  .skyjo-game-container {
+    transform: scale(0.92);
+    transform-origin: center top;
+  }
+}
+
+@media (max-height: 650px) {
+  .skyjo-game-container {
+    transform: scale(0.85);
+    transform-origin: center top;
+  }
+}
+
+/* =============================================== */
+/* iOS SAFE AREA UTILITIES                        */
+/* =============================================== */
+
+/* Padding bottom with safe area inset */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+}
+
+/* Margin bottom with safe area inset */
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 8px);
+}
+
+/* Combined padding with extra space */
+.pb-safe-plus {
+  padding-bottom: calc(env(safe-area-inset-bottom, 8px) + 16px);
+}

@@ -1,0 +1,82 @@
+{
+    "version": "1.0.0",
+    "lastUpdated": "2025-12-21",
+    "colors": {
+        "background": "#1A1B2E",
+        "playerAccent": "#2ECC71",
+        "opponentAccent": "#6B7280",
+        "textPrimary": "#FFFFFF",
+        "textSecondary": "#94A3B8",
+        "cardBack": {
+            "gradientFrom": "#374151",
+            "gradientVia": "#1E293B",
+            "gradientTo": "#0F172A"
+        },
+        "glow": {
+            "player": "rgba(52, 211, 153, 0.6)",
+            "opponent": "rgba(96, 165, 250, 0.6)"
+        }
+    },
+    "typography": {
+        "fontFamily": "Outfit, system-ui, sans-serif",
+        "h1": {
+            "size": "18pt",
+            "weight": 700
+        },
+        "body": {
+            "size": "14pt",
+            "weight": 400
+        },
+        "small": {
+            "size": "12pt",
+            "family": "monospace"
+        }
+    },
+    "spacing": {
+        "cardGap": "4px",
+        "cardGapSm": "2px",
+        "sectionPadding": "16px",
+        "sectionPaddingSm": "8px",
+        "centralZoneGap": "24px",
+        "centralZoneGapSm": "8px"
+    },
+    "cardSizes": {
+        "xs": {
+            "width": "1.44rem",
+            "height": "2rem",
+            "maxWidth": "2rem",
+            "maxHeight": "2.88rem"
+        },
+        "sm": {
+            "width": "2rem",
+            "height": "2.88rem",
+            "maxWidth": "2.88rem",
+            "maxHeight": "4rem"
+        },
+        "md": {
+            "width": "2.3rem",
+            "height": "3.16rem",
+            "maxWidth": "4rem",
+            "maxHeight": "5.75rem"
+        },
+        "lg": {
+            "width": "2.88rem",
+            "height": "4rem",
+            "maxWidth": "4.6rem",
+            "maxHeight": "6.9rem"
+        }
+    },
+    "animations": {
+        "cardFlip": "0.5s ease-in-out",
+        "scoreFlash": "0.4s ease-out",
+        "pulseGlow": "2s ease-in-out infinite"
+    },
+    "accessibility": {
+        "contrastRatios": {
+            "whiteOnBackground": "12.63:1",
+            "playerGreenOnBackground": "7.54:1",
+            "opponentGrayOnBackground": "4.68:1"
+        },
+        "wcagLevel": "AA"
+    }
+}

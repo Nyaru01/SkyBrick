@@ -1,0 +1,30 @@
+{
+    "name": "Skyjo Score V2",
+    "short_name": "SkyjoScore",
+    "description": "Calculateur de points pour le jeu Skyjo",
+    "version": "2.1.0",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#324154",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/pwa-192-v5.png?t=1769635900",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/pwa-512-v5.png?t=1769635900",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "games",
+        "utilities"
+    ],
+    "lang": "fr"
+}
