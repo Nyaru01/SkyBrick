@@ -4,7 +4,8 @@ import { Play, Users, ArrowLeft, RotateCcw, Trophy, Info, Sparkles, CheckCircle,
 import { Button } from './ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Input } from './ui/Input';
-import { Toast } from './ui/Toast';
+import toast from 'react-hot-toast'; // Import react-hot-toast
+// Removed custom Toast import to avoid confusion
 import ConfirmModal from './ui/ConfirmModal';
 import PlayerHand from './virtual/PlayerHand';
 import DrawDiscard from './virtual/DrawDiscard';
@@ -192,8 +193,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     const [lobbyCode, setLobbyCode] = useState('');
     const [myPseudo, setMyPseudo] = useState(() => userProfile?.name || localStorage.getItem('skyjo_player_pseudo') || '');
     const [myAvatarId, setMyAvatarId] = useState(() => userProfile?.avatarId || localStorage.getItem('skyjo_player_avatar_id') || 'cat');
-    const [copyToast, setCopyToast] = useState(null);
-    const [notification, setNotification] = useState(null);
+    // Removed local notification state
     const [hasPlayedVictory, setHasPlayedVictory] = useState(false);
     const [showRulesModal, setShowRulesModal] = useState(false);
     const [showDrawDiscardPopup, setShowDrawDiscardPopup] = useState(false);
@@ -335,18 +335,28 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     // Sync notifications from store
     useEffect(() => {
         if (virtualLastNotification) {
-            setNotification(virtualLastNotification);
+            // Using global toaster
+            const { type, message } = virtualLastNotification;
+            if (type === 'error') toast.error(message);
+            else if (type === 'success') toast.success(message);
+            else toast(message, { icon: 'ℹ️' });
+
             // Auto clear from store to avoid re-triggering
             setTimeout(() => {
                 clearNotification();
-            }, 500);
+            }, 100); // Faster clear
         }
     }, [virtualLastNotification, clearNotification]);
 
     // Online: Sync notifications from store
     useEffect(() => {
         if (onlineLastNotificationRaw) {
-            setNotification(onlineLastNotificationRaw);
+            // Using global toaster
+            const { type, message } = onlineLastNotificationRaw;
+            if (type === 'error') toast.error(message);
+            else if (type === 'success') toast.success(message);
+            else toast(message, { icon: 'ℹ️' }); // Default info
+
             // If we got an error or info, likely the pending state should be cleared (especially error)
             if (onlineLastNotificationRaw.type === 'error') {
                 setIsNextRoundPending(false);
@@ -1053,17 +1063,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
             return (
                 <div className="max-w-md mx-auto p-4 space-y-6 animate-in fade-in pt-10">
                     {avatarSelectorComponent}
-                    {/* Toast notifications */}
-                    <Toast
-                        notification={notification}
-                        onDismiss={() => setNotification(null)}
-                    />
-                    {copyToast && (
-                        <Toast
-                            notification={copyToast}
-                            onDismiss={() => setCopyToast(null)}
-                        />
-                    )}
+                    {/* Toast notifications REMOVED - using global Toaster */}
                     <div className="relative flex items-center justify-center py-2 mb-2">
                         <Button
                             variant="ghost"
@@ -1091,11 +1091,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                 <div className="relative group cursor-pointer"
                                     onClick={() => {
                                         navigator.clipboard.writeText(onlineRoomCode);
-                                        setCopyToast({
-                                            type: 'success',
-                                            message: 'Code copié !',
-                                            timestamp: Date.now()
-                                        });
+                                        toast.success('Code copié !');
                                     }}>
                                     <div className="absolute inset-0 bg-blue-500 blur-md opacity-20 group-hover:opacity-40 transition-opacity rounded-xl" />
                                     <div className="relative p-4 bg-slate-900/80 border border-blue-500/30 rounded-xl flex items-center justify-center gap-3 min-w-[200px] transition-all group-hover:scale-105 group-hover:border-blue-400">
