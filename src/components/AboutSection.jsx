@@ -138,7 +138,7 @@ export function AboutSection({ onAdminUnlock, appVersion = 'v2.1.0' }) {
                         <div className="flex flex-wrap justify-center gap-2 mt-4 text-[11px] font-bold text-white/80">
                             {[
                                 'Vorlesne', 'Mymy', 'Max', 'Nico', 'Arnaud',
-                                'Taib', 'Julien', 'Arthur', 'Léon'
+                                'Taib', 'Julien', 'Arthur', 'Léon', 'Eric'
                             ].map((name, i) => (
                                 <span key={i} className="px-2 py-1 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 hover:scale-105 transition-all cursor-default">
                                     {name}
