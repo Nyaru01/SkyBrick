@@ -141,49 +141,49 @@ router.get('/admin/online-users', adminAuth, (req, res) => {
 // ===== USER MANAGEMENT ROUTES (ADMIN) =====
 
 // Get all users (DB)
-router.get('/admin/all-users', adminAuth, async (req, res) => {
-    try {
-        const { limit = 50, offset = 0, search } = req.query;
-        let query = 'SELECT * FROM users';
-        const params = [];
+// router.get('/admin/all-users', adminAuth, async (req, res) => {
+//     try {
+//         const { limit = 50, offset = 0, search } = req.query;
+//         let query = 'SELECT * FROM users';
+//         const params = [];
 
-        if (search) {
-            query += ' WHERE name ILIKE $1 OR vibe_id ILIKE $1 OR id ILIKE $1';
-            params.push(`%${search}%`);
-        }
+//         if (search) {
+//             query += ' WHERE name ILIKE $1 OR vibe_id ILIKE $1 OR id ILIKE $1';
+//             params.push(`%${search}%`);
+//         }
 
-        const limitNum = parseInt(limit) || 50;
-        const offsetNum = parseInt(offset) || 0;
+//         const limitNum = parseInt(limit) || 50;
+//         const offsetNum = parseInt(offset) || 0;
 
-        query += ' ORDER BY last_seen DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
-        params.push(limitNum, offsetNum);
+//         query += ' ORDER BY last_seen DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+//         params.push(limitNum, offsetNum);
 
-        const result = await pool.query(query, params);
+//         const result = await pool.query(query, params);
 
-        // Count query
-        let countQuery = 'SELECT COUNT(*) FROM users';
-        const countParams = [];
-        if (search) {
-            countQuery += ' WHERE name ILIKE $1 OR vibe_id ILIKE $1 OR id ILIKE $1';
-            countParams.push(`%${search}%`);
-        }
-        const countResult = await pool.query(countQuery, countParams);
+//         // Count query
+//         let countQuery = 'SELECT COUNT(*) FROM users';
+//         const countParams = [];
+//         if (search) {
+//             countQuery += ' WHERE name ILIKE $1 OR vibe_id ILIKE $1 OR id ILIKE $1';
+//             countParams.push(`%${search}%`);
+//         }
+//         const countResult = await pool.query(countQuery, countParams);
 
-        // Inject online status (Safe check)
-        // const { io } = req.app.locals; 
+//         // Inject online status (Safe check)
+//         // const { io } = req.app.locals; 
 
-        res.json({
-            users: result.rows,
-            total: parseInt(countResult.rows[0].count),
-            limit: limitNum,
-            offset: offsetNum
-        });
+//         res.json({
+//             users: result.rows,
+//             total: parseInt(countResult.rows[0].count),
+//             limit: limitNum,
+//             offset: offsetNum
+//         });
 
-    } catch (error) {
-        console.error('[ADMIN ERROR] Fetch users:', error);
-        res.status(500).json({ error: 'Failed to fetch users', details: error.message, stack: error.stack });
-    }
-});
+//     } catch (error) {
+//         console.error('[ADMIN ERROR] Fetch users:', error);
+//         res.status(500).json({ error: 'Failed to fetch users', details: error.message, stack: error.stack });
+//     }
+// });
 
 // Delete user (and cleanup)
 router.delete('/admin/users/:id', adminAuth, async (req, res) => {
