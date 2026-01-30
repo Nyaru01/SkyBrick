@@ -23,10 +23,10 @@ const handler = createHandlerBoundToURL('/index.html');
 const navigationRoute = new NavigationRoute(handler);
 registerRoute(navigationRoute);
 
-// Force immediate activation on install (Aggressive Update)
-self.addEventListener('install', () => {
-    self.skipWaiting();
-});
+// Force immediate activation removed to allow manual update prompt
+// self.addEventListener('install', () => {
+//    self.skipWaiting();
+// });
 
 // Handle SKIP_WAITING message for user-prompted updates (fallback)
 self.addEventListener('message', (event) => {
