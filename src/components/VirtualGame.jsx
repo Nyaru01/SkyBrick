@@ -1689,11 +1689,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                     onClear={onlineGameStarted ? clearOnlinePendingAnimation : clearVirtualPendingAnimation}
                 />
                 <HostLeftOverlay />
-                {/* Toast notifications for ready status */}
-                <Toast
-                    notification={notification}
-                    onDismiss={() => setNotification(null)}
-                />
+                {/* Toast notifications REMOVED - using global Toaster */}{/* Toast removed */}
                 <Card className="glass-premium shadow-xl overflow-hidden min-h-[450px] flex flex-col">
                     <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 to-orange-900/20" />
                     <CardHeader className="text-center relative py-4">
