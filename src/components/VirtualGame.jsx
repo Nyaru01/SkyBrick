@@ -1414,8 +1414,8 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                                 initial={{ opacity: 0, x: -10 }}
                                                 animate={{ opacity: 1, x: 0 }}
                                                 className={`p-2.5 border rounded-2xl flex items-center justify-between group transition-all shadow-lg ${friend.isOnline
-                                                        ? 'bg-slate-800/40 border-white/5 hover:border-emerald-500/30'
-                                                        : 'bg-slate-800/20 border-white/5 opacity-75 hover:opacity-100'
+                                                    ? 'bg-slate-800/40 border-white/5 hover:border-emerald-500/30'
+                                                    : 'bg-slate-800/20 border-white/5 opacity-75 hover:opacity-100'
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-3">
@@ -1438,8 +1438,8 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                                 <Button
                                                     size="sm"
                                                     className={`h-8 px-4 rounded-full text-[10px] font-black shadow-lg active:scale-95 transition-all ${friend.isOnline
-                                                            ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
-                                                            : 'bg-slate-700 hover:bg-skyjo-blue text-slate-300 hover:text-white'
+                                                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
+                                                        : 'bg-slate-700 hover:bg-skyjo-blue text-slate-300 hover:text-white'
                                                         }`}
                                                     onClick={() => {
                                                         if (onlineRoomCode) {
@@ -1450,7 +1450,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                                         playSocialInvite();
                                                     }}
                                                 >
-                                                    IPVITER
+                                                    INVITER
                                                 </Button>
                                             </motion.div>
                                         ))
