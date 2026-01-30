@@ -626,17 +626,18 @@ export default function Dashboard() {
                         exit={{ opacity: 0, scale: 0.8, x: '-50%' }}
                         className="fixed bottom-24 left-1/2 z-[100] bg-slate-900/90 backdrop-blur-xl border border-skyjo-blue/50 rounded-3xl p-4 shadow-2xl flex items-center gap-4 min-w-[320px] max-w-[90vw]"
                     >
-                        <div className="w-12 h-12 rounded-2xl bg-skyjo-blue flex items-center justify-center shadow-lg animate-float shrink-0">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg animate-float shrink-0" style={{ backgroundColor: '#9850E1' }}>
                             <Play className="h-6 w-6 text-white" fill="white" />
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-[10px] text-skyjo-blue font-black uppercase tracking-widest truncate">Invitation de {gameInvitation.fromName}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest truncate" style={{ color: '#9850E1' }}>Invitation de {gameInvitation.fromName}</p>
                             <p className="text-white font-bold text-sm">Partie en ligne</p>
                         </div>
                         <div className="flex gap-2 shrink-0">
                             <Button
                                 size="sm"
-                                className="rounded-xl bg-skyjo-blue hover:bg-skyjo-blue/80 font-black text-xs px-4 h-10"
+                                className="rounded-xl hover:opacity-90 font-black text-xs px-4 h-10 transition-transform active:scale-95"
+                                style={{ backgroundColor: '#9850E1', boxShadow: '0 4px 14px rgba(152, 80, 225, 0.4)' }}
                                 onClick={() => {
                                     const { userProfile } = useGameStore.getState();
                                     setOnlinePlayerInfo(userProfile.name, userProfile.avatarId);
