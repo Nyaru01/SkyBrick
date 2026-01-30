@@ -109,7 +109,7 @@ export default function GameSetup({ onNavigate, onOpenTutorial }) {
         <div className="max-w-md mx-auto p-2 space-y-4 animate-in fade-in zoom-in duration-300 h-[calc(100vh-5rem)] flex flex-col justify-center overflow-hidden">
             {/* Header Premium */}
             {/* Unified Skyjo Score Container - Premium Redesign */}
-            <div ref={scoreContainerRef} className="w-full relative group overflow-hidden rounded-[24px] shadow-2xl transition-all">
+            <div ref={scoreContainerRef} className="w-full relative group overflow-hidden rounded-[24px] shadow-[0_20px_60px_-15px_rgba(14,165,233,0.3)] transition-all hover:shadow-[0_30px_70px_-15px_rgba(14,165,233,0.4)]">
                 {/* Rotating Beam Border (Preserved) */}
                 <div
                     className="absolute inset-[-150%] opacity-100"
@@ -118,11 +118,11 @@ export default function GameSetup({ onNavigate, onOpenTutorial }) {
                     }}
                 />
 
-                {/* Glass Background (Premium) */}
-                <div className="absolute inset-[2px] bg-slate-900/90 backdrop-blur-xl rounded-[22px] z-10" />
+                {/* Glass Background (Premium Ultra) */}
+                <div className="absolute inset-[1px] bg-[#0f172a]/70 backdrop-blur-2xl rounded-[23px] z-10" />
 
                 {/* Internal Ambient Gradient (Blue/Cyan for Score) */}
-                <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-cyan-500 to-blue-500 opacity-10 z-10 pointer-events-none rounded-[24px]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-purple-500/20 opacity-30 z-10 pointer-events-none rounded-[24px]" />
 
                 {/* Decorative Top Beam */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-sky-400 to-transparent z-20 opacity-60" />
