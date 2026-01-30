@@ -707,7 +707,7 @@ io.on('connection', (socket) => {
         }
 
         // Always Try Push Notification (even if offline, OR especially if offline)
-        sendInvitationNotification(String(userProfile.id), fromName, friendId, roomCode)
+        sendInvitationNotification(String(socket.dbId), fromName, friendId, roomCode)
             .then(res => {
                 if (res.success) console.log('[PUSH] Invitation sent successfully');
                 else console.log('[PUSH] Failed to send invitation:', res.error || res.reason);
