@@ -116,69 +116,116 @@ export default function GameMenu({
 
             {/* Rules Modal */}
             {showRulesModal && (
-                <>
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] animate-in fade-in" onClick={() => setShowRulesModal(false)} />
-                    <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl z-[101] animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh] overflow-hidden">
-                        {/* Modal Header */}
-                        <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-500">
-                                    <HelpCircle className="h-6 w-6" />
-                                </div>
-                                <h2 className="text-xl font-black text-white tracking-tight">Règles du Skyjo</h2>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300"
+                        onClick={() => setShowRulesModal(false)}
+                    />
+                    <div className="relative w-full max-w-lg bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
+                        {/* Background Gradients */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none" />
+
+                        {/* Header */}
+                        <div className="relative p-6 px-8 border-b border-white/5 flex items-center justify-between shrink-0">
+                            <div>
+                                <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                                    <span className="text-3xl">📜</span> Règles du Skyjo
+                                </h2>
+                                <p className="text-xs font-medium text-white/40 uppercase tracking-widest mt-1">Manuel de jeu officiel v2.0</p>
                             </div>
                             <button
                                 onClick={() => setShowRulesModal(false)}
-                                className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 transition-colors"
+                                className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all active:scale-95"
                             >
-                                <X className="h-6 w-6" />
+                                <X className="h-5 w-5" />
                             </button>
                         </div>
 
-                        {/* Modal Body */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-300">
-                            <section>
-                                <h3 className="font-bold text-amber-400 mb-2 flex items-center gap-2">🎯 Objectif</h3>
-                                <p className="text-sm leading-relaxed">Avoir le <strong>moins de points possible</strong> à la fin de la partie. Le jeu se termine quand un joueur atteint 100 points.</p>
-                            </section>
+                        {/* Content */}
+                        <div className="relative flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
 
-                            <section>
-                                <h3 className="font-bold text-amber-400 mb-2 flex items-center gap-2">🃏 Mise en place</h3>
-                                <ul className="list-disc list-inside space-y-2 text-sm leading-relaxed">
-                                    <li>Chaque joueur reçoit <strong>12 cartes face cachée</strong> (grille 3×4)</li>
-                                    <li>Retournez <strong>2 cartes</strong> de votre choix</li>
-                                    <li>Le joueur avec la somme la plus élevée commence</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-amber-400 mb-2 flex items-center gap-2">🔄 Tour de jeu</h3>
-                                <p className="text-sm leading-relaxed mb-3">Piochez une carte de la <strong>pioche</strong> ou de la <strong>défausse</strong> :</p>
-                                <ul className="list-disc list-inside space-y-2 text-sm">
-                                    <li><strong>Pioche</strong> : Gardez-la pour remplacer une carte OU défaussez-la et retournez une carte cachée</li>
-                                    <li><strong>Défausse</strong> : Remplacez obligatoirement une de vos cartes</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-amber-400 mb-2 flex items-center gap-2">✨ Colonnes identiques</h3>
-                                <p className="text-sm leading-relaxed mb-3">Si une colonne contient <strong>3 cartes identiques</strong> (face visible), elle est <strong>éliminée</strong> !</p>
-                                <div className="p-3 bg-amber-900/20 rounded-2xl text-xs border border-amber-700/30 text-amber-200/80">
-                                    <strong>⚠️ Ordre important :</strong> D'abord défausser la carte échangée, PUIS les 3 cartes identiques par-dessus.
+                            {/* Goal Card */}
+                            <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 relative overflow-hidden">
+                                <div className="relative z-10">
+                                    <h3 className="text-indigo-400 font-black uppercase text-xs tracking-widest mb-2 flex items-center gap-2">
+                                        <Sparkles className="w-3 h-3" /> Objectif Ultime
+                                    </h3>
+                                    <p className="text-indigo-100/90 text-sm font-medium leading-relaxed">
+                                        Avoir le <strong>moins de points possible</strong> à la fin de la partie. La partie s'arrête dès qu'un joueur atteint <strong>100 points</strong>.
+                                    </p>
                                 </div>
-                            </section>
+                            </div>
 
-                            <section>
-                                <h3 className="font-bold text-amber-400 mb-2 flex items-center gap-2">🏁 Fin de manche</h3>
-                                <ul className="list-disc list-inside space-y-2 text-sm">
-                                    <li>La manche se termine quand un joueur retourne toutes ses cartes</li>
-                                    <li>Les autres joueurs jouent <strong>un dernier tour</strong></li>
-                                    <li><strong>Attention :</strong> Si le finisseur n'a pas le score le plus bas, ses points sont <strong>doublés</strong> !</li>
-                                </ul>
-                            </section>
+                            {/* Steps Grid */}
+                            <div className="space-y-4">
+
+                                {/* Step 1 */}
+                                <div className="group p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+                                    <h3 className="text-amber-400 font-black uppercase text-xs tracking-widest mb-3 flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded bg-amber-500/20 flex items-center justify-center text-[10px]">1</span>
+                                        Mise en place
+                                    </h3>
+                                    <ul className="space-y-2">
+                                        <li className="flex items-start gap-3 text-sm text-slate-300">
+                                            <span className="w-1 h-1 rounded-full bg-amber-500/50 mt-2 shrink-0" />
+                                            <span>Chaque joueur reçoit <strong>12 cartes</strong> (grille 3×4).</span>
+                                        </li>
+                                        <li className="flex items-start gap-3 text-sm text-slate-300">
+                                            <span className="w-1 h-1 rounded-full bg-amber-500/50 mt-2 shrink-0" />
+                                            <span>Retournez <strong>2 cartes</strong> au hasard.</span>
+                                        </li>
+                                        <li className="flex items-start gap-3 text-sm text-slate-300">
+                                            <span className="w-1 h-1 rounded-full bg-amber-500/50 mt-2 shrink-0" />
+                                            <span>Le plus gros score commence !</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                {/* Step 2 */}
+                                <div className="group p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+                                    <h3 className="text-blue-400 font-black uppercase text-xs tracking-widest mb-3 flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded bg-blue-500/20 flex items-center justify-center text-[10px]">2</span>
+                                        Tour de jeu
+                                    </h3>
+                                    <p className="text-sm text-slate-400 mb-3">À votre tour, choisissez une source :</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="p-3 rounded-xl bg-slate-950/50 border border-white/5 text-center">
+                                            <span className="text-xs font-bold text-white block mb-1">LA PIOCHE</span>
+                                            <span className="text-[10px] text-slate-400 leading-tight block">Gardez la carte (échange) ou défaussez-la (révélez une carte).</span>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-slate-950/50 border border-white/5 text-center">
+                                            <span className="text-xs font-bold text-white block mb-1">LA DÉFAUSSE</span>
+                                            <span className="text-[10px] text-slate-400 leading-tight block">Prenez la carte visible et échangez-la immédiatement.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Pro Tips */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
+                                        <h3 className="text-emerald-400 font-bold uppercase text-[10px] tracking-widest mb-2">Combo Colonne</h3>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            3 cartes identiques dans une colonne ? <strong>BIM !</strong> La colonne est éliminée (0 point).
+                                        </p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10">
+                                        <h3 className="text-rose-400 font-bold uppercase text-[10px] tracking-widest mb-2">Attention !</h3>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            Si vous terminez la manche mais n'avez pas le plus petit score, vos points <strong>doublent</strong> !
+                                        </p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-4 border-t border-white/5 bg-slate-950/30 text-center">
+                            <p className="text-[10px] text-white/20 font-medium">Bonne chance, que le meilleur gagne !</p>
                         </div>
                     </div>
-                </>
+                </div>
             )}
         </div>
     );

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Shield } from 'lucide-react';
+import { Shield, Heart } from 'lucide-react';
 
 export function AboutSection({ onAdminUnlock, appVersion = 'v2.1.0' }) {
     const [clickCount, setClickCount] = useState(0);
@@ -124,6 +124,35 @@ export function AboutSection({ onAdminUnlock, appVersion = 'v2.1.0' }) {
                         </div>
                     </div>
                 )}
+
+                {/* Credits Container */}
+                <div className="mt-6 pt-6 border-t border-white/10">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-pink-400 font-black mb-3 text-center opacity-80">Remerciements & Amour &lt;3</p>
+                    <div className="bg-gradient-to-br from-pink-500/10 to-rose-500/10 border border-pink-500/20 rounded-2xl p-5 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
+
+                        <p className="text-center text-xs text-pink-100/90 leading-relaxed font-medium">
+                            Un immense merci à l'équipe de choc pour leur participation et leur aide précieuse :
+                        </p>
+
+                        <div className="flex flex-wrap justify-center gap-2 mt-4 text-[11px] font-bold text-white/80">
+                            {[
+                                'Vorlesne', 'Mymy', 'Max', 'Nico', 'Arnaud',
+                                'Taib', 'Julien', 'Arthur', 'Léon'
+                            ].map((name, i) => (
+                                <span key={i} className="px-2 py-1 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 hover:scale-105 transition-all cursor-default">
+                                    {name}
+                                </span>
+                            ))}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-pink-500/10 flex justify-center">
+                            <div className="px-5 py-2 rounded-full bg-pink-500/20 border border-pink-500/30 text-pink-300 text-[10px] font-black uppercase tracking-widest hover:bg-pink-500/30 hover:scale-105 transition-all cursor-heart flex items-center gap-2 shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+                                ✨ Et surtout Melody <Heart className="w-3 h-3 fill-pink-400 text-pink-400 animate-pulse" /> ✨
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Easter Egg / Admin Input */}
