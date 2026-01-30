@@ -52,7 +52,7 @@ export const useGameStore = create(
                 avatarId: 'cat',
                 emoji: '🐱',
                 vibeId: '',
-                level: 19,
+                level: 1,
                 currentXP: 0
             },
 
@@ -95,8 +95,8 @@ export const useGameStore = create(
             // XP & Level System
             // Note: We'll keep these values in parallel with userProfile for backward compatibility 
             // but sync them to userProfile when they change
-            level: 19,
-            lastAcknowledgedLevel: 19,
+            level: 1,
+            lastAcknowledgedLevel: 1,
             currentXP: 0,
 
             generateSkyId: () => {

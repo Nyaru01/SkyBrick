@@ -14,6 +14,16 @@ export function FeedbackModal({ isOpen, onClose, username }) {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Reset state when modal opens
+    React.useEffect(() => {
+        if (isOpen) {
+            setIsSuccess(false);
+            setContent('');
+            setType('suggestion');
+            setIsSubmitting(false);
+        }
+    }, [isOpen]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -40,25 +50,27 @@ export function FeedbackModal({ isOpen, onClose, username }) {
                 })
             });
 
-            const text = await response.text();
-            let data;
-            try {
-                data = text ? JSON.parse(text) : {};
-            } catch (e) {
-                console.error('Failed to parse response:', text);
-                throw new Error('Server returned invalid JSON');
+            // Handle server errors (non-200 responses)
+            if (!response.ok) {
+                // Try to parse error message from JSON, fallback to generic error
+                let errorMessage = 'Erreur lors de l\'envoi';
+                try {
+                    const data = await response.json();
+                    if (data && data.error) errorMessage = data.error;
+                } catch { }
+                throw new Error(errorMessage);
             }
 
-            if (response.ok) {
-                setIsSuccess(true);
-                playVictory && playVictory(); // Optional: play sound if available
-                setContent('');
-            } else {
-                toast.error(data.error || 'Erreur lors de l\'envoi');
-            }
+            // Success path
+            // We can safely assume success if status is 200-299, even if response body parsing fails
+            setIsSuccess(true);
+            // playVictory && playVictory(); // Optional: play sound if available (undefined check safe)
+            setContent('');
+
         } catch (error) {
             console.error('[FEEDBACK ERROR]', error);
-            toast.error('Erreur réseau. Réessaie plus tard.');
+            // Show the actual error message if manageable, otherwise generic
+            toast.error(error.message || 'Erreur réseau. Réessaie plus tard.');
         } finally {
             setIsSubmitting(false);
         }
