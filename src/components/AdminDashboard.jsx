@@ -504,33 +504,22 @@ function AllPlayersList({ users, onDelete }) {
             {users.map((u) => (
                 <div key={u.id} className="group relative p-4 flex flex-col md:flex-row items-center gap-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all duration-300 hover:bg-white/[0.05] hover:border-indigo-500/20 hover:scale-[1.01]">
 
-                    {/* Rank Badge / Avatar */}
-                    <div className="relative">
-                        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-3xl shadow-inner border border-white/5 group-hover:bg-indigo-500/20 transition-colors">
-                            {u.emoji || '👤'}
-                        </div>
-                        {u.level > 10 && (
-                            <div className="absolute -top-2 -right-2 bg-amber-500/20 border border-amber-500/50 text-amber-500 text-[10px] font-black px-2 py-0.5 rounded-full backdrop-blur-md">
-                                ELITE
-                            </div>
-                        )}
-                    </div>
-
                     {/* Info */}
                     <div className="flex-1 text-center md:text-left">
-                        <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                        <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
                             <h4 className="text-lg font-black text-white tracking-tight">{u.name}</h4>
                             <span className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-white/40 font-mono">{u.id.substring(0, 6)}</span>
+                            {u.level > 10 && (
+                                <span className="bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[8px] font-black px-2 py-0.5 rounded-full uppercase">
+                                    ELITE
+                                </span>
+                            )}
                         </div>
 
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2 text-[10px] font-black uppercase tracking-wider text-white/40">
                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
                                 <span className={`w-2 h-2 rounded-full ${u.level > 5 ? 'bg-purple-500' : 'bg-slate-500'}`} />
                                 Niveau {u.level || 1}
-                            </div>
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
-                                <span className="text-white/20">XP</span>
-                                <span className="text-white/70">{u.xp || 0}</span>
                             </div>
                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
                                 <span className="text-white/20">Vu</span>
