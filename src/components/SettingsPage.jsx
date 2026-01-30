@@ -138,7 +138,7 @@ export default function SettingsPage({ onViewChangelog }) {
                 >
                     <div className={cn(
                         "absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-300 flex items-center justify-center",
-                        value ? "left-7 rotate-0" : "left-1 -rotate-180 bg-slate-400"
+                        value ? "right-1 rotate-0" : "left-1 -rotate-180 bg-slate-400"
                     )}>
                         {value && <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${styles.dotActive}`} />}
                     </div>
