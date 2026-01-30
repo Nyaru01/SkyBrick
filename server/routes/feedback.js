@@ -143,18 +143,9 @@ router.get('/admin/online-users', adminAuth, (req, res) => {
 // Get all users (DB)
 router.get('/admin/all-users', adminAuth, async (req, res) => {
     try {
-        // Mock response to test route stability
-        console.log('[DEBUG] /admin/all-users reached');
-        res.json({
-            users: [],
-            total: 0,
-            limit: 50,
-            offset: 0
-        });
-
-        /* 
-        // ORIGINAL LOGIC (COMMENTED OUT FOR DEBUGGING)
         const { limit = 50, offset = 0, search } = req.query;
+        console.log(`[ADMIN] Fetching users (limit=${limit}, offset=${offset}, search=${search})`);
+
         let query = 'SELECT * FROM users';
         const params = [];
 
@@ -170,6 +161,7 @@ router.get('/admin/all-users', adminAuth, async (req, res) => {
         params.push(limitNum, offsetNum);
 
         const result = await pool.query(query, params);
+        console.log(`[ADMIN] Users fetched: ${result.rows.length}`);
 
         // Count query
         let countQuery = 'SELECT COUNT(*) FROM users';
@@ -180,13 +172,15 @@ router.get('/admin/all-users', adminAuth, async (req, res) => {
         }
         const countResult = await pool.query(countQuery, countParams);
 
+        // Optional: Inject online status (Skip for now to ensure stability)
+        // const { io } = req.app.locals; 
+
         res.json({
             users: result.rows,
             total: parseInt(countResult.rows[0].count),
             limit: limitNum,
             offset: offsetNum
         });
-        */
 
     } catch (error) {
         console.error('[ADMIN ERROR] Fetch users:', error);
