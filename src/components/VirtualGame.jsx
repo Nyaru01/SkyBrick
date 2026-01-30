@@ -1395,42 +1395,52 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                                         <Users className="h-3 w-3 text-emerald-400" />
-                                        Amis en ligne ({friends.filter(f => f.isOnline).length})
+                                        Mes Amis ({friends.length})
                                     </h3>
                                 </div>
 
                                 <div className="space-y-2">
-                                    {friends.filter(f => f.isOnline).length === 0 ? (
+                                    {friends.length === 0 ? (
                                         <div className="p-4 bg-slate-800/20 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 opacity-60">
                                             <Users className="h-5 w-5 text-slate-600" />
                                             <div className="text-[10px] text-slate-500 text-center uppercase tracking-widest">
-                                                Aucun ami en ligne
+                                                Aucun ami trouvé
                                             </div>
                                         </div>
                                     ) : (
-                                        friends.filter(f => f.isOnline).map(friend => (
+                                        friends.map(friend => (
                                             <motion.div
                                                 key={friend.id}
                                                 initial={{ opacity: 0, x: -10 }}
                                                 animate={{ opacity: 1, x: 0 }}
-                                                className="p-2.5 bg-slate-800/40 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-emerald-500/30 transition-all shadow-lg"
+                                                className={`p-2.5 border rounded-2xl flex items-center justify-between group transition-all shadow-lg ${friend.isOnline
+                                                        ? 'bg-slate-800/40 border-white/5 hover:border-emerald-500/30'
+                                                        : 'bg-slate-800/20 border-white/5 opacity-75 hover:opacity-100'
+                                                    }`}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="relative">
-                                                        <div className="w-10 h-10 rounded-full bg-slate-900 border border-white/10 overflow-hidden shadow-inner">
+                                                        <div className={`w-10 h-10 rounded-full bg-slate-900 border overflow-hidden shadow-inner ${friend.isOnline ? 'border-white/10' : 'border-white/5 grayscale'}`}>
                                                             <img src={getAvatarPath(friend.avatar_id)} alt="" className="w-full h-full object-cover" />
                                                         </div>
-                                                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                                                        {friend.isOnline && (
+                                                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                                                        )}
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-black text-white">{friend.name}</p>
-                                                        <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest">Disponible</p>
+                                                        <p className={`text-xs font-black ${friend.isOnline ? 'text-white' : 'text-slate-400'}`}>{friend.name}</p>
+                                                        <p className={`text-[9px] font-bold uppercase tracking-widest ${friend.isOnline ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                                            {friend.isOnline ? 'Disponible' : 'Hors ligne'}
+                                                        </p>
                                                     </div>
                                                 </div>
 
                                                 <Button
                                                     size="sm"
-                                                    className="h-8 px-4 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                                                    className={`h-8 px-4 rounded-full text-[10px] font-black shadow-lg active:scale-95 transition-all ${friend.isOnline
+                                                            ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
+                                                            : 'bg-slate-700 hover:bg-skyjo-blue text-slate-300 hover:text-white'
+                                                        }`}
                                                     onClick={() => {
                                                         if (onlineRoomCode) {
                                                             inviteFriend(friend.id, onlineRoomCode, userProfile.name);
@@ -1440,7 +1450,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                                         playSocialInvite();
                                                     }}
                                                 >
-                                                    INVITER
+                                                    IPVITER
                                                 </Button>
                                             </motion.div>
                                         ))
