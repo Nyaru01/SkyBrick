@@ -23,6 +23,8 @@ import {
 dotenv.config();
 
 import feedbackRoutes from './routes/feedback.js';
+import pushRoutes from './routes/push.js';
+import { sendInvitationNotification } from './utils/pushNotifications.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,8 +78,12 @@ const initDb = async () => {
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS push_subscriptions (
-                user_id TEXT PRIMARY KEY,
-                subscription JSONB NOT NULL
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(255) UNIQUE NOT NULL,
+                username VARCHAR(100),
+                subscription JSONB NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
             );
         `);
         console.log('[DB] ✓ Push subscriptions table ready');
@@ -124,6 +130,9 @@ const initDb = async () => {
         { table: 'feedbacks', col: 'type', sql: "ALTER TABLE feedbacks ADD COLUMN type VARCHAR(50) DEFAULT 'general'" },
         { table: 'feedbacks', col: 'status', sql: "ALTER TABLE feedbacks ADD COLUMN status VARCHAR(20) DEFAULT 'new'" },
         { table: 'feedbacks', col: 'device_info', sql: 'ALTER TABLE feedbacks ADD COLUMN device_info JSONB' },
+        { table: 'push_subscriptions', col: 'username', sql: 'ALTER TABLE push_subscriptions ADD COLUMN username VARCHAR(100)' },
+        { table: 'push_subscriptions', col: 'created_at', sql: 'ALTER TABLE push_subscriptions ADD COLUMN created_at TIMESTAMP DEFAULT NOW()' },
+        { table: 'push_subscriptions', col: 'updated_at', sql: 'ALTER TABLE push_subscriptions ADD COLUMN updated_at TIMESTAMP DEFAULT NOW()' },
     ];
 
     for (const m of migrations) {
@@ -145,8 +154,9 @@ const initDb = async () => {
 initDb();
 
 // --- Web Push Configuration ---
+// --- Web Push Configuration ---
+// Config handled in utils/pushNotifications.js
 const vapidPublic = process.env.VITE_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
-const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
 
 // Endpoint to expose VAPID public key to client
 app.get('/api/config/vapid', (req, res) => {
@@ -156,17 +166,9 @@ app.get('/api/config/vapid', (req, res) => {
     res.json({ key: vapidPublic });
 });
 
-if (vapidPublic && vapidPrivate) {
-    webpush.setVapidDetails(
-        'mailto:nyaru@skyjo.offline',
-        vapidPublic,
-        vapidPrivate
-    );
-    console.log('[PUSH] VAPID keys configured');
-}
-
 // --- Feedback API ---
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/push', pushRoutes);
 
 // --- Social & Profile API ---
 
@@ -425,29 +427,7 @@ app.get('/api/social/leaderboard/:userId', async (req, res) => {
     }
 });
 
-app.post('/api/push/subscribe', async (req, res) => {
-    const { userId, subscription } = req.body;
-    try {
-        await pool.query(`
-            INSERT INTO push_subscriptions (user_id, subscription)
-            VALUES ($1, $2)
-            ON CONFLICT (user_id) DO UPDATE SET subscription = EXCLUDED.subscription
-        `, [userId, subscription]);
-        res.json({ status: 'subscribed' });
-    } catch (err) {
-        res.status(500).json({ error: 'Subscription failed' });
-    }
-});
 
-app.post('/api/push/unsubscribe', async (req, res) => {
-    const { userId } = req.body;
-    try {
-        await pool.query('DELETE FROM push_subscriptions WHERE user_id = $1', [userId]);
-        res.json({ status: 'unsubscribed' });
-    } catch (err) {
-        res.status(500).json({ error: 'Unsubscription failed' });
-    }
-});
 
 // --- Server Utilities ---
 
@@ -724,20 +704,12 @@ io.on('connection', (socket) => {
             });
 
             // Try Push Notification
-            try {
-                const subResp = await pool.query('SELECT subscription FROM push_subscriptions WHERE user_id = $1', [friendId]);
-                if (subResp.rows.length > 0) {
-                    const payload = JSON.stringify({
-                        title: 'Invitation SkyJo',
-                        body: `${fromName} t'invite à rejoindre sa partie !`,
-                        icon: '/logo.jpg',
-                        data: { url: `/?room=${roomCode}` }
-                    });
-                    await webpush.sendNotification(subResp.rows[0].subscription, payload);
-                }
-            } catch (err) {
-                console.error('[PUSH] Invite error:', err);
-            }
+            sendInvitationNotification(socket.dbId, fromName, friendId, roomCode)
+                .then(res => {
+                    if (res.success) console.log('[PUSH] Invitation sent successfully');
+                    else console.log('[PUSH] Failed to send invitation:', res.error || res.reason);
+                })
+                .catch(err => console.error('[PUSH] Unexpected error:', err));
         } else {
             console.log(`[INVITE] Target ${stringFriendId} OFFLINE or not registered`);
         }

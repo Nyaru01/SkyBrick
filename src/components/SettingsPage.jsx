@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { useGameStore } from '../store/gameStore';
 import { cn } from '../lib/utils';
-import { pushManager } from '../lib/pushManager';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import { Bell, BellOff } from 'lucide-react';
 import { FeedbackModal } from './FeedbackModal';
 import { AboutSection } from './AboutSection';
@@ -23,8 +23,14 @@ export default function SettingsPage({ onViewChangelog }) {
 
     const [showConfirmReset, setShowConfirmReset] = useState(false);
     const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-    const [pushSubscription, setPushSubscription] = useState(null);
-    const [isPushLoading, setIsPushLoading] = useState(false);
+    const {
+        isSupported,
+        isSubscribed,
+        permission,
+        requestPermission,
+        subscribe,
+        unsubscribe
+    } = usePushNotifications();
 
     const userProfile = useGameStore(state => state.userProfile);
     const setIsFeedbackOpen = useGameStore(state => state.setIsFeedbackOpen);
@@ -32,33 +38,27 @@ export default function SettingsPage({ onViewChangelog }) {
     const setAdminAuthToken = useGameStore(state => state.setAdminAuthToken);
 
     // Initial check for push subscription
-    useEffect(() => {
-        const checkPush = async () => {
-            const sub = await pushManager.getSubscription();
-            setPushSubscription(sub);
-        };
-        checkPush();
-    }, []);
-
     const handleTogglePush = async () => {
-        setIsPushLoading(true);
+        if (!isSupported) return;
+
         try {
-            if (pushSubscription) {
-                await pushManager.unsubscribe(userProfile.id);
-                setPushSubscription(null);
+            if (isSubscribed) {
+                await unsubscribe();
             } else {
-                const sub = await pushManager.subscribe(userProfile.id);
-                setPushSubscription(sub);
+                if (permission === 'default') {
+                    const granted = await requestPermission();
+                    if (!granted) {
+                        alert("⚠️ Vous avez refusé les notifications. Veuillez vérifier les paramètres de votre navigateur.");
+                    }
+                } else if (permission === 'denied') {
+                    alert("⚠️ Notifications bloquées par le navigateur.\n\nVeuillez cliquer sur l'icône de cadenas 🔒 ou de réglages dans la barre d'adresse pour autoriser les notifications.");
+                } else {
+                    await subscribe();
+                }
             }
         } catch (error) {
             console.error('[PUSH] Toggle Error:', error);
-            if (error.message.includes('permission denied') || error.name === 'NotAllowedError') {
-                alert("⚠️ Notifications bloquées par le navigateur.\n\nVeuillez cliquer sur l'icône de cadenas 🔒 ou de réglages dans la barre d'adresse pour autoriser les notifications.");
-            } else {
-                alert("Erreur lors de l'activation des notifications: " + error.message);
-            }
-        } finally {
-            setIsPushLoading(false);
+            alert("Erreur: " + error.message);
         }
     };
 
@@ -172,11 +172,15 @@ export default function SettingsPage({ onViewChangelog }) {
                 <CardContent className="space-y-3">
                     <PremiumToggle
                         label="Notifications Push"
-                        subLabel="Invitations et mises à jour"
-                        icon={pushSubscription ? Bell : BellOff}
-                        value={!!pushSubscription}
+                        subLabel={
+                            !isSupported ? "Non supporté sur cet appareil" :
+                                permission === 'denied' ? "Bloqué (vérifiez les réglages)" :
+                                    "Invitations et mises à jour"
+                        }
+                        icon={isSubscribed ? Bell : BellOff}
+                        value={isSubscribed}
                         onChange={handleTogglePush}
-                        disabled={isPushLoading}
+                        disabled={!isSupported}
                         activeColor="amber"
                     />
 

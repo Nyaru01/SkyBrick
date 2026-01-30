@@ -8,7 +8,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { IntroScreen } from './components/IntroScreen';
 
 import { Toaster } from 'react-hot-toast';
-import ReloadPrompt from './components/ReloadPrompt';
 import InstallPWA from './components/InstallPWA';
 
 function App() {
@@ -71,7 +70,7 @@ function App() {
                 },
               }}
             />
-            <ReloadPrompt />
+
             <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100 selection:bg-emerald-100 dark:selection:bg-emerald-900">
               <ImagePreloader>
                 <Dashboard />
