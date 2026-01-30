@@ -3,6 +3,8 @@ import { Plus, X, User, Sparkles, Gamepad2, RefreshCw, CheckCircle, Edit2, Arrow
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 // Card imports removed as they are no longer used
+// Card imports removed as they are no longer used
+import InstallPWA from './InstallPWA';
 import { useGameStore } from '../store/gameStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { useUpdateCheck } from './UpdatePrompt';
@@ -303,11 +305,11 @@ export default function GameSetup({ onNavigate, onOpenTutorial }) {
                 </div>
             </button>
 
-            {/* Bottom Buttons - Cleaner look */}
-            <div className="grid grid-cols-2 gap-3 mt-2">
+            {/* Footer Actions */}
+            <div className="grid grid-cols-2 gap-3 mt-auto pt-6">
                 <button
-                    onClick={onOpenTutorial}
-                    className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all text-xs font-bold bg-slate-800/40 hover:bg-slate-700/50 text-slate-400 hover:text-white border border-white/5 hover:border-white/10"
+                    onClick={() => setShowTutorial(true)}
+                    className="flex items-center justify-center gap-2 py-3 px-4 bg-slate-800/40 hover:bg-slate-700/50 border border-white/5 hover:border-white/10 rounded-xl text-slate-400 hover:text-white transition-all text-xs font-bold"
                 >
                     <HelpCircle className="w-4 h-4" />
                     TUTORIEL
@@ -337,6 +339,13 @@ export default function GameSetup({ onNavigate, onOpenTutorial }) {
                         </>
                     )}
                 </button>
+
+                {/* Install App Button (Full Width) */}
+                <div className="col-span-2">
+                    <InstallPWA
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#9850E1]/10 hover:bg-[#9850E1]/20 border border-[#9850E1]/30 hover:border-[#9850E1]/50 rounded-xl text-[#9850E1] hover:text-[#d09dfc] transition-all text-xs font-bold uppercase tracking-wider"
+                    />
+                </div>
             </div>
 
             {/* Avatar Selector Modal */}
