@@ -702,17 +702,17 @@ io.on('connection', (socket) => {
             sockets.forEach(socketId => {
                 io.to(socketId).emit('game_invitation', { fromName, roomCode });
             });
-
-            // Try Push Notification
-            sendInvitationNotification(socket.dbId, fromName, friendId, roomCode)
-                .then(res => {
-                    if (res.success) console.log('[PUSH] Invitation sent successfully');
-                    else console.log('[PUSH] Failed to send invitation:', res.error || res.reason);
-                })
-                .catch(err => console.error('[PUSH] Unexpected error:', err));
         } else {
-            console.log(`[INVITE] Target ${stringFriendId} OFFLINE or not registered`);
+            console.log(`[INVITE] Target ${stringFriendId} OFFLINE (Socket not found)`);
         }
+
+        // Always Try Push Notification (even if offline, OR especially if offline)
+        sendInvitationNotification(String(userProfile.id), fromName, friendId, roomCode)
+            .then(res => {
+                if (res.success) console.log('[PUSH] Invitation sent successfully');
+                else console.log('[PUSH] Failed to send invitation:', res.error || res.reason);
+            })
+            .catch(err => console.error('[PUSH] Unexpected error:', err));
     });
 
     const handlePlayerLeave = (socket) => {

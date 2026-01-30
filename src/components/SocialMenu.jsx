@@ -348,7 +348,7 @@ export default function SocialDashboard(props) {
                                                             </Button>
                                                         ) : (
                                                             <>
-                                                                {f.isOnline && f.status === 'ACCEPTED' && (
+                                                                {f.status === 'ACCEPTED' && (
                                                                     <div className="flex gap-1.5">
                                                                         {/* Chat Button */}
                                                                         <Button
