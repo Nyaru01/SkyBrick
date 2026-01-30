@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'react-hot-toast';
 import { Settings, Trophy, Sparkles, History, Undo2, BarChart3, Play, LogOut, CheckCircle2, Users, HelpCircle, X, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore, selectPlayers, selectRounds, selectThreshold, selectGameStatus } from '../store/gameStore';
 import { useVirtualGameStore } from '../store/virtualGameStore';
-import { useOnlineGameStore } from '../store/onlineGameStore';
+import { useOnlineGameStore, socket } from '../store/onlineGameStore';
 import { useFeedback } from '../hooks/useFeedback';
 import { Button } from './ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
@@ -168,6 +169,23 @@ export default function Dashboard() {
             });
         }
     }, [isInOnlineSession, isGameInProgress, isInLobby, roomCode, effectiveTab, activeTab]);
+
+    // Listen for debug push logs
+    useEffect(() => {
+        const handleDebugLog = (log) => {
+            if (log.type === 'error') {
+                toast.error(`Push Error: ${log.message}`, { duration: 5000 });
+            } else {
+                toast.success(`Push Debug: ${log.message}`, { duration: 3000, icon: '📡' });
+            }
+        };
+
+        socket.on('debug_push_log', handleDebugLog);
+
+        return () => {
+            socket.off('debug_push_log', handleDebugLog);
+        };
+    }, []);
 
     const handleQuitOnlineGame = () => {
         setConfirmConfig({

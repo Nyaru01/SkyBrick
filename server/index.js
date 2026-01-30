@@ -709,10 +709,18 @@ io.on('connection', (socket) => {
         // Always Try Push Notification (even if offline, OR especially if offline)
         sendInvitationNotification(String(socket.dbId), fromName, friendId, roomCode)
             .then(res => {
-                if (res.success) console.log('[PUSH] Invitation sent successfully');
-                else console.log('[PUSH] Failed to send invitation:', res.error || res.reason);
+                if (res.success) {
+                    console.log('[PUSH] Invitation sent successfully');
+                    socket.emit('debug_push_log', { type: 'success', message: 'Push sent to server gateway' });
+                } else {
+                    console.log('[PUSH] Failed to send invitation:', res.error || res.reason);
+                    socket.emit('debug_push_log', { type: 'error', message: res.error || res.reason });
+                }
             })
-            .catch(err => console.error('[PUSH] Unexpected error:', err));
+            .catch(err => {
+                console.error('[PUSH] Unexpected error:', err);
+                socket.emit('debug_push_log', { type: 'error', message: err.message });
+            });
     });
 
     const handlePlayerLeave = (socket) => {
