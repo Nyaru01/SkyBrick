@@ -72,43 +72,79 @@ export default function SettingsPage({ onViewChangelog }) {
         setIsAdminOpen(true);
     };
 
-    const PremiumToggle = ({ label, subLabel, icon: Icon, value, onChange, disabled, activeColor = "emerald" }) => (
-        <div className={cn(
-            "flex items-center justify-between p-4 rounded-xl transition-all duration-300 border border-transparent",
-            "bg-white/5 hover:bg-white/10",
-            value ? `border-${activeColor}-500/20 shadow-[0_0_15px_rgba(var(--${activeColor}-500),0.1)]` : "border-white/5"
-        )}>
-            <div className="flex items-center gap-4">
-                <div className={cn(
-                    "p-3 rounded-lg transition-colors",
-                    value ? `bg-${activeColor}-500/20 text-${activeColor}-400` : "bg-slate-800 text-slate-500"
-                )}>
-                    <Icon className="h-6 w-6" />
-                </div>
-                <div>
-                    <p className={cn("font-bold text-base transition-colors", value ? "text-white" : "text-slate-400")}>{label}</p>
-                    <p className="text-xs text-slate-500 font-medium">{subLabel}</p>
-                </div>
-            </div>
+    // Static styles lookup to prevent Tailwind purging and ensure valid classes
+    const TOGGLE_STYLES = {
+        emerald: {
+            activeBorder: "border-emerald-500/20",
+            activeShadow: "shadow-[0_0_15px_rgba(16,185,129,0.1)]",
+            iconBgMatch: "bg-emerald-500/20 text-emerald-400",
+            trackActive: "bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]",
+            dotActive: "bg-emerald-500"
+        },
+        sky: {
+            activeBorder: "border-sky-500/20",
+            activeShadow: "shadow-[0_0_15px_rgba(14,165,233,0.1)]",
+            iconBgMatch: "bg-sky-500/20 text-sky-400",
+            trackActive: "bg-gradient-to-r from-sky-500 to-sky-400 shadow-[0_0_10px_rgba(14,165,233,0.5)]",
+            dotActive: "bg-sky-500"
+        },
+        purple: {
+            activeBorder: "border-purple-500/20",
+            activeShadow: "shadow-[0_0_15px_rgba(168,85,247,0.1)]",
+            iconBgMatch: "bg-purple-500/20 text-purple-400",
+            trackActive: "bg-gradient-to-r from-purple-500 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]",
+            dotActive: "bg-purple-500"
+        },
+        amber: {
+            activeBorder: "border-amber-500/20",
+            activeShadow: "shadow-[0_0_15px_rgba(245,158,11,0.1)]",
+            iconBgMatch: "bg-amber-500/20 text-amber-400",
+            trackActive: "bg-gradient-to-r from-amber-500 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]",
+            dotActive: "bg-amber-500"
+        }
+    };
 
-            <button
-                onClick={onChange}
-                disabled={disabled}
-                className={cn(
-                    "relative w-14 h-8 rounded-full transition-all duration-300 shadow-inner",
-                    value ? `bg-gradient-to-r from-${activeColor}-500 to-${activeColor}-400 shadow-[0_0_10px_rgba(var(--${activeColor}-500),0.5)]` : "bg-slate-700/50 border border-white/10",
-                    disabled && "opacity-50 cursor-not-allowed"
-                )}
-            >
-                <div className={cn(
-                    "absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-300 flex items-center justify-center",
-                    value ? "left-7 rotate-0" : "left-1 -rotate-180 bg-slate-400"
-                )}>
-                    {value && <div className={`w-1.5 h-1.5 rounded-full bg-${activeColor}-500 animate-pulse`} />}
+    const PremiumToggle = ({ label, subLabel, icon: Icon, value, onChange, disabled, activeColor = "emerald" }) => {
+        const styles = TOGGLE_STYLES[activeColor] || TOGGLE_STYLES.emerald;
+
+        return (
+            <div className={cn(
+                "flex items-center justify-between p-4 rounded-xl transition-all duration-300 border border-transparent",
+                "bg-white/5 hover:bg-white/10",
+                value ? `${styles.activeBorder} ${styles.activeShadow}` : "border-white/5"
+            )}>
+                <div className="flex items-center gap-4">
+                    <div className={cn(
+                        "p-3 rounded-lg transition-colors",
+                        value ? styles.iconBgMatch : "bg-slate-800 text-slate-500"
+                    )}>
+                        <Icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <p className={cn("font-bold text-base transition-colors", value ? "text-white" : "text-slate-400")}>{label}</p>
+                        <p className="text-xs text-slate-500 font-medium">{subLabel}</p>
+                    </div>
                 </div>
-            </button>
-        </div>
-    );
+
+                <button
+                    onClick={onChange}
+                    disabled={disabled}
+                    className={cn(
+                        "relative w-14 h-8 rounded-full transition-all duration-300 shadow-inner",
+                        value ? styles.trackActive : "bg-slate-700/50 border border-white/10",
+                        disabled && "opacity-50 cursor-not-allowed"
+                    )}
+                >
+                    <div className={cn(
+                        "absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-300 flex items-center justify-center",
+                        value ? "left-7 rotate-0" : "left-1 -rotate-180 bg-slate-400"
+                    )}>
+                        {value && <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${styles.dotActive}`} />}
+                    </div>
+                </button>
+            </div>
+        );
+    };
 
     return (
         <div className="space-y-6 pb-32 animate-in fade-in zoom-in-95 duration-700">
