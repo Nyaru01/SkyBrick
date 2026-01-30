@@ -152,8 +152,11 @@ router.get('/admin/all-users', adminAuth, async (req, res) => {
             params.push(`%${search}%`);
         }
 
+        const limitNum = parseInt(limit) || 50;
+        const offsetNum = parseInt(offset) || 0;
+
         query += ' ORDER BY last_seen DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
-        params.push(limit, offset);
+        params.push(limitNum, offsetNum);
 
         const result = await pool.query(query, params);
 
@@ -166,25 +169,19 @@ router.get('/admin/all-users', adminAuth, async (req, res) => {
         }
         const countResult = await pool.query(countQuery, countParams);
 
-        // Inject online status (if available in memory)
-        const { io } = req.app.locals;
-        const usersWithStatus = result.rows.map(u => {
-            // Basic online check based on socket rooms maps we constructed elsewhere
-            // Note: In a cleaner architecture we would export the maps from index.js but here 
-            // we rely on accurate last_seen or if we can access io.sockets
-            return u;
-        });
+        // Inject online status (Safe check)
+        // const { io } = req.app.locals; 
 
         res.json({
-            users: usersWithStatus,
+            users: result.rows,
             total: parseInt(countResult.rows[0].count),
-            limit: parseInt(limit),
-            offset: parseInt(offset)
+            limit: limitNum,
+            offset: offsetNum
         });
 
     } catch (error) {
         console.error('[ADMIN ERROR] Fetch users:', error);
-        res.status(500).json({ error: 'Failed to fetch users' });
+        res.status(500).json({ error: 'Failed to fetch users', details: error.message, stack: error.stack });
     }
 });
 
