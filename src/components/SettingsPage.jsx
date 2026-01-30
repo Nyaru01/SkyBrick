@@ -73,33 +73,34 @@ export default function SettingsPage({ onViewChangelog }) {
     };
 
     // Static styles lookup to prevent Tailwind purging and ensure valid classes
+    // Static styles lookup to prevent Tailwind purging and ensure valid classes
     const TOGGLE_STYLES = {
         emerald: {
             activeBorder: "border-emerald-500/20",
             activeShadow: "shadow-[0_0_15px_rgba(16,185,129,0.1)]",
             iconBgMatch: "bg-emerald-500/20 text-emerald-400",
-            trackActive: "bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]",
+            trackActive: "bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)] border border-transparent",
             dotActive: "bg-emerald-500"
         },
         sky: {
             activeBorder: "border-sky-500/20",
             activeShadow: "shadow-[0_0_15px_rgba(14,165,233,0.1)]",
             iconBgMatch: "bg-sky-500/20 text-sky-400",
-            trackActive: "bg-gradient-to-r from-sky-500 to-sky-400 shadow-[0_0_10px_rgba(14,165,233,0.5)]",
+            trackActive: "bg-gradient-to-r from-sky-500 to-sky-400 shadow-[0_0_10px_rgba(14,165,233,0.5)] border border-transparent",
             dotActive: "bg-sky-500"
         },
         purple: {
             activeBorder: "border-purple-500/20",
             activeShadow: "shadow-[0_0_15px_rgba(168,85,247,0.1)]",
             iconBgMatch: "bg-purple-500/20 text-purple-400",
-            trackActive: "bg-gradient-to-r from-purple-500 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]",
+            trackActive: "bg-gradient-to-r from-purple-500 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)] border border-transparent",
             dotActive: "bg-purple-500"
         },
         amber: {
             activeBorder: "border-amber-500/20",
             activeShadow: "shadow-[0_0_15px_rgba(245,158,11,0.1)]",
             iconBgMatch: "bg-amber-500/20 text-amber-400",
-            trackActive: "bg-gradient-to-r from-amber-500 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]",
+            trackActive: "bg-gradient-to-r from-amber-500 to-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)] border border-transparent",
             dotActive: "bg-amber-500"
         }
     };
