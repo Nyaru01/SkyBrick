@@ -500,51 +500,61 @@ function AllPlayersList({ users, onDelete }) {
     }
 
     return (
-        <div className="overflow-x-auto rounded-[2rem] border border-white/5">
-            <table className="w-full text-left border-collapse">
-                <thead>
-                    <tr className="bg-white/5 text-[10px] uppercase tracking-widest font-black text-white/40 border-b border-white/5">
-                        <th className="p-6">Joueur</th>
-                        <th className="p-6">Niveau</th>
-                        <th className="p-6">Dernière Vue</th>
-                        <th className="p-6 text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 text-sm text-white/70">
-                    {users.map((u) => (
-                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
-                            <td className="p-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-lg shadow-inner">
-                                        {u.emoji || '👤'}
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-white tracking-wide">{u.name}</div>
-                                        <div className="text-[10px] font-mono text-white/20 uppercase">{u.id.substring(0, 8)}...</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td className="p-6">
-                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold">
-                                    Lvl {u.level || 1}
+        <div className="grid grid-cols-1 gap-4 animate-in slide-in-from-bottom-6 duration-500">
+            {users.map((u) => (
+                <div key={u.id} className="group relative p-4 flex flex-col md:flex-row items-center gap-6 bg-white/[0.02] border border-white/5 rounded-3xl transition-all duration-300 hover:bg-white/[0.05] hover:border-indigo-500/20 hover:scale-[1.01]">
+
+                    {/* Rank Badge / Avatar */}
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-3xl shadow-inner border border-white/5 group-hover:bg-indigo-500/20 transition-colors">
+                            {u.emoji || '👤'}
+                        </div>
+                        {u.level > 10 && (
+                            <div className="absolute -top-2 -right-2 bg-amber-500/20 border border-amber-500/50 text-amber-500 text-[10px] font-black px-2 py-0.5 rounded-full backdrop-blur-md">
+                                ELITE
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 text-center md:text-left">
+                        <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                            <h4 className="text-lg font-black text-white tracking-tight">{u.name}</h4>
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-white/40 font-mono">{u.id.substring(0, 6)}</span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2 text-[10px] font-black uppercase tracking-wider text-white/40">
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                                <span className={`w-2 h-2 rounded-full ${u.level > 5 ? 'bg-purple-500' : 'bg-slate-500'}`} />
+                                Niveau {u.level || 1}
+                            </div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                                <span className="text-white/20">XP</span>
+                                <span className="text-white/70">{u.xp || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                                <span className="text-white/20">Vu</span>
+                                <span className="text-white/70">
+                                    {u.last_seen
+                                        ? new Date(u.last_seen).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+                                        : 'Jamais'}
                                 </span>
-                            </td>
-                            <td className="p-6 font-mono text-xs text-white/40">
-                                {u.last_seen ? new Date(u.last_seen).toLocaleDateString() + ' ' + new Date(u.last_seen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
-                            </td>
-                            <td className="p-6 text-right">
-                                <button
-                                    onClick={() => onDelete(u.id)}
-                                    className="p-2 bg-red-500/5 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-all opacity-50 group-hover:opacity-100"
-                                    title="Supprimer définitivement"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/5 justify-end">
+                        <button
+                            onClick={() => onDelete(u.id)}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-500/5 hover:bg-red-500/10 text-red-400/70 hover:text-red-400 border border-transparent hover:border-red-500/30 rounded-xl transition-all"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            <span className="text-[10px] uppercase font-black tracking-widest md:hidden">Supprimer</span>
+                        </button>
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }

@@ -144,7 +144,6 @@ router.get('/admin/online-users', adminAuth, (req, res) => {
 router.get('/admin/all-users', adminAuth, async (req, res) => {
     try {
         const { limit = 50, offset = 0, search } = req.query;
-        console.log(`[ADMIN] Fetching users (limit=${limit}, offset=${offset}, search=${search})`);
 
         let query = 'SELECT * FROM users';
         const params = [];
