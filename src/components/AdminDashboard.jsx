@@ -7,10 +7,13 @@ export function AdminDashboard({ adminPassword, onClose }) {
     const [activeTab, setActiveTab] = useState('feedbacks');
     const [feedbacks, setFeedbacks] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
+    const [allUsersCount, setAllUsersCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({ total: 0, new: 0, read: 0 });
     const [authError, setAuthError] = useState(false);
     const [feedbackToDelete, setFeedbackToDelete] = useState(null);
+    const [userToDelete, setUserToDelete] = useState(null);
 
     const fetchFeedbacks = async () => {
         setLoading(true);
@@ -68,14 +71,40 @@ export function AdminDashboard({ adminPassword, onClose }) {
         }
     };
 
+    const fetchAllUsers = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('/api/feedback/admin/all-users', {
+                headers: { 'x-admin-auth': adminPassword }
+            });
+
+            if (response.status === 403 || response.status === 401) {
+                setAuthError(true);
+                return;
+            }
+
+            if (!response.ok) throw new Error('Auth failed');
+            const data = await response.json();
+            setAllUsers(data.users);
+            setAllUsersCount(data.total);
+        } catch (error) {
+            console.error(error);
+            toast.error('Erreur chargement utilisateurs');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchFeedbacks();
         fetchOnlineUsers();
+        fetchAllUsers();
     }, []);
 
     useEffect(() => {
         if (activeTab === 'feedbacks') fetchFeedbacks();
         if (activeTab === 'live') fetchOnlineUsers();
+        if (activeTab === 'database') fetchAllUsers();
     }, [activeTab]);
 
     const updateStatus = async (id, newStatus) => {
@@ -117,6 +146,27 @@ export function AdminDashboard({ adminPassword, onClose }) {
         setFeedbackToDelete(null);
     };
 
+    const requestDeleteUser = (id) => {
+        setUserToDelete(id);
+    };
+
+    const performDeleteUser = async () => {
+        if (!userToDelete) return;
+
+        try {
+            await fetch(`/api/feedback/admin/users/${userToDelete}`, {
+                method: 'DELETE',
+                headers: { 'x-admin-auth': adminPassword }
+            });
+
+            toast.success('Joueur supprimé');
+            fetchAllUsers();
+        } catch (error) {
+            toast.error('Erreur suppression utilisateur');
+        }
+        setUserToDelete(null);
+    };
+
 
     const renderContent = () => {
         if (loading) {
@@ -149,7 +199,7 @@ export function AdminDashboard({ adminPassword, onClose }) {
         return (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Stats Row */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-4 gap-4 mb-6">
                     <StatCard
                         icon={MessageSquare} label="Total Feedbacks" value={stats.total} color="blue"
                     />
@@ -157,7 +207,10 @@ export function AdminDashboard({ adminPassword, onClose }) {
                         icon={Check} label="Nouveaux" value={stats.new} color="yellow"
                     />
                     <StatCard
-                        icon={Users} label="En Ligne Maintenant" value={onlineUsers.length} color="green"
+                        icon={Users} label="En Ligne" value={onlineUsers.length} color="green"
+                    />
+                    <StatCard
+                        icon={Archive} label="Joueurs Inscrits" value={allUsersCount} color="purple"
                     />
                 </div>
 
@@ -174,6 +227,11 @@ export function AdminDashboard({ adminPassword, onClose }) {
                             onClick={() => setActiveTab('live')}
                             icon={Users} label="Live Users"
                         />
+                        <TabButton
+                            active={activeTab === 'database'}
+                            onClick={() => setActiveTab('database')}
+                            icon={Archive} label="Tous les Joueurs"
+                        />
                     </div>
 
                     <div className="p-6 min-h-[400px]">
@@ -183,8 +241,13 @@ export function AdminDashboard({ adminPassword, onClose }) {
                                 onUpdate={updateStatus}
                                 onDelete={requestDeleteFeedback}
                             />
-                        ) : (
+                        ) : activeTab === 'live' ? (
                             <UserList users={onlineUsers} />
+                        ) : (
+                            <AllPlayersList
+                                users={allUsers}
+                                onDelete={requestDeleteUser}
+                            />
                         )}
                     </div>
                 </div>
@@ -236,6 +299,16 @@ export function AdminDashboard({ adminPassword, onClose }) {
                     confirmText="Supprimer"
                     variant="danger"
                 />
+
+                <ConfirmModal
+                    isOpen={!!userToDelete}
+                    onClose={() => setUserToDelete(null)}
+                    onConfirm={performDeleteUser}
+                    title="Supprimer le joueur ?"
+                    message="⚠ ATTENTION : Cette action supprimera DÉFINITIVEMENT le compte joueur, tout son historique de parties et ses feedbacks. Le compte ne pourra pas être récupéré."
+                    confirmText="Supprimer Définitivement"
+                    variant="danger"
+                />
             </div>
         </div>
     );
@@ -260,10 +333,16 @@ function StatCard({ icon: Icon, label, value, color }) {
             border: 'border-emerald-500/20',
             icon: 'text-emerald-400',
             glow: 'shadow-[0_0_20px_rgba(16,185,129,0.15)]'
+        },
+        purple: {
+            bg: 'bg-purple-500/10',
+            border: 'border-purple-500/20',
+            icon: 'text-purple-400',
+            glow: 'shadow-[0_0_20px_rgba(168,85,247,0.15)]'
         }
     };
 
-    const style = variants[color];
+    const style = variants[color] || variants.blue;
 
     return (
         <div className={`p-4 md:p-6 rounded-[2rem] bg-white/[0.03] border ${style.border} ${style.glow} backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:bg-white/[0.05]`}>
@@ -406,6 +485,66 @@ function UserList({ users }) {
                     </div>
                 </div>
             ))}
+        </div>
+    );
+}
+
+function AllPlayersList({ users, onDelete }) {
+    if (users.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-24 bg-white/[0.02] rounded-[2rem] border border-dashed border-white/10 uppercase tracking-widest text-white/20 font-black text-xs">
+                <Archive className="w-12 h-12 mb-4 opacity-10" />
+                Database_Empty
+            </div>
+        );
+    }
+
+    return (
+        <div className="overflow-x-auto rounded-[2rem] border border-white/5">
+            <table className="w-full text-left border-collapse">
+                <thead>
+                    <tr className="bg-white/5 text-[10px] uppercase tracking-widest font-black text-white/40 border-b border-white/5">
+                        <th className="p-6">Joueur</th>
+                        <th className="p-6">Niveau</th>
+                        <th className="p-6">Dernière Vue</th>
+                        <th className="p-6 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-sm text-white/70">
+                    {users.map((u) => (
+                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
+                            <td className="p-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-lg shadow-inner">
+                                        {u.emoji || '👤'}
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-white tracking-wide">{u.name}</div>
+                                        <div className="text-[10px] font-mono text-white/20 uppercase">{u.id.substring(0, 8)}...</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="p-6">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold">
+                                    Lvl {u.level || 1}
+                                </span>
+                            </td>
+                            <td className="p-6 font-mono text-xs text-white/40">
+                                {u.last_seen ? new Date(u.last_seen).toLocaleDateString() + ' ' + new Date(u.last_seen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                            </td>
+                            <td className="p-6 text-right">
+                                <button
+                                    onClick={() => onDelete(u.id)}
+                                    className="p-2 bg-red-500/5 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-all opacity-50 group-hover:opacity-100"
+                                    title="Supprimer définitivement"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }

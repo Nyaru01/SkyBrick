@@ -138,4 +138,93 @@ router.get('/admin/online-users', adminAuth, (req, res) => {
     }
 });
 
+// ===== USER MANAGEMENT ROUTES (ADMIN) =====
+
+// Get all users (DB)
+router.get('/admin/all-users', adminAuth, async (req, res) => {
+    try {
+        const { limit = 50, offset = 0, search } = req.query;
+        let query = 'SELECT * FROM users';
+        const params = [];
+
+        if (search) {
+            query += ' WHERE name ILIKE $1 OR vibe_id ILIKE $1 OR id ILIKE $1';
+            params.push(`%${search}%`);
+        }
+
+        query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+        params.push(limit, offset);
+
+        const result = await pool.query(query, params);
+
+        // Count query
+        let countQuery = 'SELECT COUNT(*) FROM users';
+        const countParams = [];
+        if (search) {
+            countQuery += ' WHERE name ILIKE $1 OR vibe_id ILIKE $1 OR id ILIKE $1';
+            countParams.push(`%${search}%`);
+        }
+        const countResult = await pool.query(countQuery, countParams);
+
+        // Inject online status (if available in memory)
+        const { io } = req.app.locals;
+        const usersWithStatus = result.rows.map(u => {
+            // Basic online check based on socket rooms maps we constructed elsewhere
+            // Note: In a cleaner architecture we would export the maps from index.js but here 
+            // we rely on accurate last_seen or if we can access io.sockets
+            return u;
+        });
+
+        res.json({
+            users: usersWithStatus,
+            total: parseInt(countResult.rows[0].count),
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+    } catch (error) {
+        console.error('[ADMIN ERROR] Fetch users:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// Delete user (and cleanup)
+router.delete('/admin/users/:id', adminAuth, async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { id } = req.params;
+        await client.query('BEGIN');
+
+        // Cleanup related tables (Cascading usually handles this if configured, but let's be safe/explicit if FKs missing)
+        await client.query('DELETE FROM friends WHERE user_id = $1 OR friend_id = $1', [id]);
+        await client.query('DELETE FROM feedbacks WHERE user_id = $1', [id]);
+        await client.query('DELETE FROM push_subscriptions WHERE user_id = $1', [id]);
+        await client.query('DELETE FROM game_history WHERE user_id = $1', [id]);
+
+        // Delete user
+        const result = await client.query('DELETE FROM users WHERE id = $1', [id]);
+
+        if (result.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        await client.query('COMMIT');
+
+        // Optional: Disconnect socket if online
+        const { io } = req.app.locals;
+        // Finding socket by dbId is tricky without the map access here, 
+        // but the client will disconnect naturally or re-login fail.
+
+        res.json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('[ADMIN ERROR] Delete user:', error);
+        res.status(500).json({ error: 'Failed to delete user' });
+    } finally {
+        client.release();
+    }
+});
+
+
 export default router;
