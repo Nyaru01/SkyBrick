@@ -152,7 +152,7 @@ router.get('/admin/all-users', adminAuth, async (req, res) => {
             params.push(`%${search}%`);
         }
 
-        query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+        query += ' ORDER BY last_seen DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
         params.push(limit, offset);
 
         const result = await pool.query(query, params);
