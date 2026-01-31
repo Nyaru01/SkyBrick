@@ -124,8 +124,10 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
             const container = canvas?.parentElement;
             if (canvas && container) {
                 canvas.width = container.clientWidth;
-                // Optimized height: Balanced between game space and button visibility
-                canvas.height = Math.min(800, window.innerHeight - 180);
+                // Match the container's height exactly to avoid 
+                // stretching/squashing or bottom gaps (logic vs visual mismatch)
+                canvas.height = container.clientHeight;
+
                 if (gameState === 'MENU') {
                     initGame();
                 }
