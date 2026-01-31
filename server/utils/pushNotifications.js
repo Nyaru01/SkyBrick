@@ -4,15 +4,23 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Configurer web-push avec vos clés VAPID
-if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-    console.warn('⚠️ VAPID keys are missing! Push notifications will not work.');
-}
+const publicKey = (process.env.VAPID_PUBLIC_KEY || '').trim();
+const privateKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
 
-webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:contact@skyjo-score.com',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-);
+if (!publicKey || !privateKey) {
+    console.warn('⚠️ VAPID keys are missing! Push notifications will not work.');
+} else {
+    try {
+        webpush.setVapidDetails(
+            process.env.VAPID_SUBJECT || 'mailto:contact@skyjo-score.com',
+            publicKey,
+            privateKey
+        );
+        console.log('✅ VAPID configuration valid');
+    } catch (err) {
+        console.error('❌ VAPID Check Failed:', err.message);
+    }
+}
 
 export async function sendInvitationNotification(inviterId, inviterName, invitedUserId, roomId) {
     try {
