@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RotateCcw, Trophy, X, ShieldAlert, Cpu } from 'lucide-react';
+import { Play, RotateCcw, Trophy, X, ShieldAlert, Cpu, Zap } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import ConfirmModal from './ui/ConfirmModal';
@@ -13,12 +13,14 @@ const BALL_RADIUS = 8;
 const BRICK_ROW_COUNT = 3;
 const BRICK_COLUMN_COUNT = 8; // Fewer columns for better mobile fit
 const BRICK_PADDING = 8;
-const INITIAL_BALL_SPEED = 6;
-const MAX_BALL_SPEED = 12;
+const INITIAL_BALL_SPEED = 4;
+const MAX_BALL_SPEED = 8;
 
 // Colors
 const PLAYER_COLOR = '#3b82f6'; // Blue-500
 const AI_COLOR = '#ef4444'; // Red-500
+const BONUS_COLOR = '#f59e0b'; // Amber-500 (Gold)
+const BONUS_CHANCE = 0.15; // 15% chance
 
 export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }) {
     const canvasRef = useRef(null);
@@ -30,6 +32,10 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
     const [gameState, setGameState] = useState('MENU'); // MENU, PLAYING, GAME_OVER, VICTORY
     const [winner, setWinner] = useState(null);
     const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+
+    // Bonus State
+    const [playerBonusAvailable, setPlayerBonusAvailable] = useState(false);
+    const [aiBonusAvailable, setAiBonusAvailable] = useState(false);
 
     const { playClick, playError, playVictory, playCardPlace, playCardFlip, playCardDraw } = useFeedback();
 
@@ -62,7 +68,8 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
             y: height / 2,
             dx: 0,
             dy: 0,
-            speed: INITIAL_BALL_SPEED
+            speed: INITIAL_BALL_SPEED,
+            isSuperCharged: false
         };
         // Random Launch
         launchBall();
@@ -91,7 +98,8 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
                     bricks[c][r] = {
                         x: (c * (brickWidth + BRICK_PADDING)) + BRICK_PADDING,
                         y: startY + (r * (20 + BRICK_PADDING)),
-                        status: 1
+                        status: 1,
+                        isBonus: Math.random() < BONUS_CHANCE
                     };
                 }
             }
@@ -104,6 +112,8 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
 
         setScorePlayer(0);
         setScoreAI(0);
+        setPlayerBonusAvailable(false);
+        setAiBonusAvailable(false);
         setWinner(null);
 
     }, []);
@@ -115,6 +125,7 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
         ballRef.current.dx = INITIAL_BALL_SPEED * Math.sin(angle);
         ballRef.current.dy = INITIAL_BALL_SPEED * Math.cos(angle) * direction;
         ballRef.current.speed = INITIAL_BALL_SPEED;
+        ballRef.current.isSuperCharged = false;
     };
 
     // Resize Handler
@@ -127,6 +138,13 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
                 // Match the container's height exactly to avoid 
                 // stretching/squashing or bottom gaps (logic vs visual mismatch)
                 canvas.height = container.clientHeight;
+
+                // Update Render Ref
+                canvasSizeRef.current = {
+                    width: canvas.width,
+                    height: canvas.height,
+                    brickWidth: (canvas.width - ((BRICK_COLUMN_COUNT + 1) * BRICK_PADDING)) / BRICK_COLUMN_COUNT
+                };
 
                 if (gameState === 'MENU') {
                     initGame();
@@ -255,16 +273,53 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
         ctx.closePath();
         ctx.shadowBlur = 0;
 
-        // Draw Bricks Function
-        const drawBricks = (bricks, color) => {
+        // Draw Bricks Function (Solar Glass Style)
+        const drawBricks = (bricks, baseColor, isAi) => {
             let activeCount = 0;
             bricks.forEach((col) => {
                 col.forEach((b) => {
                     if (b.status === 1) {
                         activeCount++;
+
+                        // Style Definition
+                        const isRed = baseColor === AI_COLOR;
+                        const isBonus = b.isBonus;
+
+                        let gradientStart, gradientEnd;
+
+                        if (isBonus) {
+                            gradientStart = '#fcd34d'; // Amber-300
+                            gradientEnd = '#b45309'; // Amber-700
+                        } else {
+                            gradientStart = isRed ? '#ef4444' : '#3b82f6';
+                            gradientEnd = isRed ? '#7f1d1d' : '#1e3a8a';
+                        }
+
+                        // Gradient Fill
+                        const gradient = ctx.createLinearGradient(b.x, b.y, b.x, b.y + brickHeight);
+                        gradient.addColorStop(0, gradientStart);
+                        gradient.addColorStop(1, gradientEnd);
+
                         ctx.beginPath();
                         ctx.roundRect(b.x, b.y, brickWidth, brickHeight, 4);
-                        ctx.fillStyle = color;
+                        ctx.fillStyle = gradient;
+                        // Glass Glow Effect
+                        ctx.shadowColor = baseColor;
+                        ctx.shadowBlur = 15;
+                        ctx.fill();
+
+                        // Glass Border (Inner Light)
+                        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+
+                        ctx.shadowBlur = 0; // Reset shadow
+                        ctx.closePath();
+
+                        // Shine/Reflection (Top half)
+                        ctx.beginPath();
+                        ctx.roundRect(b.x, b.y, brickWidth, brickHeight / 2, { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 });
+                        ctx.fillStyle = "rgba(255,255,255,0.1)";
                         ctx.fill();
                         ctx.closePath();
 
@@ -272,9 +327,23 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
                         if (b.status === 1 &&
                             ball.x > b.x && ball.x < b.x + brickWidth &&
                             ball.y > b.y && ball.y < b.y + brickHeight) {
-                            ball.dy = -ball.dy;
+
+                            // Normal Bounce unless Super Charged
+                            if (!ball.isSuperCharged) {
+                                ball.dy = -ball.dy;
+                            }
                             b.status = 0;
                             playCardDraw(); // Hit sound
+
+                            // Check Bonus
+                            if (b.isBonus) {
+                                if (isAi) {
+                                    setPlayerBonusAvailable(true);
+                                } else {
+                                    setAiBonusAvailable(true);
+                                }
+                            }
+
                             return true; // Collision handled
                         }
                     }
@@ -283,19 +352,14 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
             return activeCount;
         };
 
-        // Draw Player Bricks (Bottom) - If hit, AI scores ? No, objective is to break enemy bricks?
-        // Let's say: User defends Bottom Bricks. AI defends Top Bricks.
-        // Destroying AI bricks -> Player Score increases. 
-        // Destroying ALL enemy bricks -> WIN.
-
         // AI DEFENSE (Top Bricks)
-        const activeAiBricks = drawBricks(aiBricksRef.current, AI_COLOR);
+        const activeAiBricks = drawBricks(aiBricksRef.current, AI_COLOR, true);
         if (activeAiBricks < (BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - scorePlayer) {
             setScorePlayer((BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - activeAiBricks);
         }
 
         // PLAYER DEFENSE (Bottom Bricks)
-        const activePlayerBricks = drawBricks(playerBricksRef.current, PLAYER_COLOR);
+        const activePlayerBricks = drawBricks(playerBricksRef.current, PLAYER_COLOR, false);
         if (activePlayerBricks < (BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - scoreAI) {
             setScoreAI((BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - activePlayerBricks);
         }
@@ -317,9 +381,17 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
         // Draw Ball
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffffff";
-        ctx.shadowColor = "#ffffff";
-        ctx.shadowBlur = 8;
+
+        if (ball.isSuperCharged) {
+            ctx.fillStyle = "#fbbf24"; // Amber-400
+            ctx.shadowColor = "#f59e0b";
+            ctx.shadowBlur = 20;
+        } else {
+            ctx.fillStyle = "#ffffff";
+            ctx.shadowColor = "#ffffff";
+            ctx.shadowBlur = 8;
+        }
+
         ctx.fill();
         ctx.shadowBlur = 0;
         ctx.closePath();
@@ -409,6 +481,16 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
         return () => cancelAnimationFrame(requestRef.current);
     }, [update]);
 
+    const activateBonus = () => {
+        if (playerBonusAvailable) {
+            playCardPlace(); // Sound
+            ballRef.current.isSuperCharged = true;
+            ballRef.current.speed = MAX_BALL_SPEED * 1.5; // BOOST SPEED
+            console.log("BOOM! Super Charge Activated!");
+            setPlayerBonusAvailable(false);
+        }
+    };
+
     const startGame = () => {
         playClick();
         initGame();
@@ -416,144 +498,127 @@ export default function VersusBreakout({ onBackToMenu, aiDifficulty = 'NORMAL' }
     };
 
     return (
-        <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto h-full space-y-4">
-            {/* Scores Header */}
-            <div className="flex items-center justify-between w-full px-8 py-2 bg-slate-900/50 rounded-2xl border border-white/10">
-                <div className="flex flex-col items-center">
-                    <span className="text-xs font-bold text-red-400 uppercase tracking-wider">IA (Cible)</span>
-                    <span className="text-2xl font-black text-white">{BRICK_COLUMN_COUNT * BRICK_ROW_COUNT - scorePlayer}</span>
-                </div>
-                <div className="h-8 w-px bg-white/10" />
-                <div className="flex flex-col items-center">
-                    <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Joueur (Défense)</span>
-                    <span className="text-2xl font-black text-white">{BRICK_COLUMN_COUNT * BRICK_ROW_COUNT - scoreAI}</span>
+        <div className="flex flex-col w-full max-w-lg mx-auto h-[100dvh] overflow-hidden bg-slate-900">
+            {/* Scores Header (Fixed Height) */}
+            <div className="flex-none p-4 z-10">
+                <div className="flex items-center justify-between w-full px-6 py-2 bg-slate-900/80 backdrop-blur border border-white/10 rounded-2xl shadow-lg">
+                    <div className="flex flex-col items-center">
+                        <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">IA</span>
+                        <span className="text-xl font-black text-white">{BRICK_COLUMN_COUNT * BRICK_ROW_COUNT - scorePlayer}</span>
+                    </div>
+                    <div className="text-xs font-bold text-slate-500/50">VS</div>
+                    <div className="flex flex-col items-center">
+                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">JOUEUR</span>
+                        <span className="text-xl font-black text-white">{BRICK_COLUMN_COUNT * BRICK_ROW_COUNT - scoreAI}</span>
+                    </div>
                 </div>
             </div>
 
-            {/* Game Area */}
-            <Card className="relative w-full flex-1 min-h-[500px] overflow-hidden bg-slate-900/80 backdrop-blur-xl border-white/10 shadow-2xl rounded-3xl">
-                <canvas
-                    ref={canvasRef}
-                    className="w-full h-full touch-none cursor-none"
-                    style={{ background: 'radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)' }}
-                />
-
-                {/* Menu Overlay */}
-                <AnimatePresence>
-                    {gameState === 'MENU' && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-10"
-                        >
-                            <ShieldAlert className="w-16 h-16 text-blue-500 mb-4 animate-pulse" />
-                            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-indigo-400 mb-2 drop-shadow-lg text-center">
-                                DEFENSE DE MUR
-                            </h1>
-                            <p className="text-slate-300 mb-8 text-center max-w-xs text-sm">
-                                Protégez votre mur de briques en bas. Détruisez le mur de l'IA en haut.
-                            </p>
-
-                            <Button
-                                onClick={startGame}
-                                className="h-14 px-8 text-lg font-bold bg-blue-600 hover:bg-blue-500 rounded-2xl shadow-lg shadow-blue-500/20"
-                            >
-                                <Play className="w-6 h-6 mr-2" fill="currentColor" />
-                                COMBATTRE
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={onBackToMenu}
-                                className="mt-4 text-slate-400 hover:text-white"
-                            >
-                                Retour
-                            </Button>
-                        </motion.div>
-                    )}
-
-                    {gameState === 'VICTORY' && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="absolute inset-0 flex flex-col items-center justify-center bg-emerald-900/90 backdrop-blur-md z-20"
-                        >
-                            <Trophy className="w-20 h-20 text-yellow-400 mb-4 animate-bounce" />
-                            <h2 className="text-4xl font-black text-white mb-2">VICTOIRE !</h2>
-                            <p className="text-emerald-200 mb-8">Vous avez détruit le mur de l'IA.</p>
-
-                            <div className="flex gap-4">
-                                <Button
-                                    onClick={onBackToMenu}
-                                    variant="outline"
-                                    className="h-12 w-32 border-white/20 text-white hover:bg-white/10"
-                                >
-                                    Quitter
-                                </Button>
-                                <Button
-                                    onClick={startGame}
-                                    className="h-12 px-6 bg-white text-emerald-900 hover:bg-emerald-100 font-bold"
-                                >
-                                    <RotateCcw className="w-5 h-5 mr-2" />
-                                    Rejouer
-                                </Button>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {gameState === 'GAME_OVER' && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 backdrop-blur-md z-20"
-                        >
-                            <Cpu className="w-20 h-20 text-red-500 mb-4" />
-                            <h2 className="text-4xl font-black text-white mb-2">DÉFAITE...</h2>
-                            <p className="text-red-200 mb-8">L'IA a percé votre défense.</p>
-
-                            <div className="flex gap-4">
-                                <Button
-                                    onClick={onBackToMenu}
-                                    variant="outline"
-                                    className="h-12 w-32 border-white/20 text-white hover:bg-white/10"
-                                >
-                                    Quitter
-                                </Button>
-                                <Button
-                                    onClick={startGame}
-                                    className="h-12 px-6 bg-red-600 text-white hover:bg-red-500 font-bold"
-                                >
-                                    <RotateCcw className="w-5 h-5 mr-2" />
-                                    Revanche
-                                </Button>
-                            </div>
-                        </motion.div>
-                    )}
-
-
-                    {/* Quit Confirmation */}
-                    <ConfirmModal
-                        isOpen={showQuitConfirm}
-                        onClose={() => setShowQuitConfirm(false)}
-                        onConfirm={onBackToMenu}
-                        title="Abandonner la partie ?"
-                        message="Êtes-vous sûr de vouloir quitter ? La progression sera perdue."
-                        confirmText="Abandonner"
-                        variant="danger"
+            {/* Game Area (Fills remaining space) */}
+            <div className="flex-1 relative w-full min-h-0">
+                <div className="absolute inset-0 overflow-hidden rounded-3xl mx-2 bg-slate-900/50 border border-white/5 shadow-2xl">
+                    <canvas
+                        ref={canvasRef}
+                        className="w-full h-full touch-none cursor-none block"
+                        style={{ background: 'radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)' }}
                     />
-                </AnimatePresence>
-            </Card>
 
-            <div className="flex justify-center pt-2 pb-6">
+                    {/* Menu Overlay (Inside Relative Container) */}
+                    <AnimatePresence>
+                        {gameState === 'MENU' && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-20"
+                            >
+                                <ShieldAlert className="w-16 h-16 text-blue-500 mb-4 animate-pulse" />
+                                <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-indigo-400 mb-2 drop-shadow-lg text-center">
+                                    DEFENSE DE MUR
+                                </h1>
+                                <Button
+                                    onClick={startGame}
+                                    className="h-12 px-8 text-lg font-bold bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/20"
+                                >
+                                    <Play className="w-5 h-5 mr-2" fill="currentColor" />
+                                    JOUER
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={onBackToMenu}
+                                    className="mt-4 text-slate-400 hover:text-white"
+                                >
+                                    Retour
+                                </Button>
+                            </motion.div>
+                        )}
+
+                        {/* Victory/Game Over Overlays... */}
+                        {gameState === 'VICTORY' && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="absolute inset-0 flex flex-col items-center justify-center bg-emerald-900/90 backdrop-blur-md z-30"
+                            >
+                                <Trophy className="w-16 h-16 text-yellow-400 mb-2 animate-bounce" />
+                                <h2 className="text-3xl font-black text-white mb-1">VICTOIRE !</h2>
+                                <div className="flex gap-3 mt-6">
+                                    <Button onClick={onBackToMenu} variant="outline" className="border-white/20 text-white">Quitter</Button>
+                                    <Button onClick={startGame} className="bg-white text-emerald-900 font-bold">Rejouer</Button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {gameState === 'GAME_OVER' && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 backdrop-blur-md z-30"
+                            >
+                                <Cpu className="w-16 h-16 text-red-500 mb-2" />
+                                <h2 className="text-3xl font-black text-white mb-1">DÉFAITE...</h2>
+                                <div className="flex gap-3 mt-6">
+                                    <Button onClick={onBackToMenu} variant="outline" className="border-white/20 text-white">Quitter</Button>
+                                    <Button onClick={startGame} className="bg-red-600 text-white font-bold">Revanche</Button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* BONUS BUTTON (Inside Game Area) */}
+                        {playerBonusAvailable && gameState === 'PLAYING' && (
+                            <motion.button
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={activateBonus}
+                                className="absolute bottom-4 right-4 w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.6)] border-4 border-white/50 flex items-center justify-center z-40 animate-pulse cursor-pointer"
+                            >
+                                <Zap className="w-8 h-8 text-white drop-shadow-md" fill="currentColor" />
+                            </motion.button>
+                        )}
+
+                        {/* Quit Confirmation (Overlay) */}
+                        <ConfirmModal
+                            isOpen={showQuitConfirm}
+                            onClose={() => setShowQuitConfirm(false)}
+                            onConfirm={onBackToMenu}
+                            title="Quitter ?"
+                            message="La progression sera perdue."
+                            confirmText="Oui, quitter"
+                            variant="danger"
+                        />
+                    </AnimatePresence>
+                </div>
+            </div>
+
+            {/* Footer / Controls (Fixed Height) */}
+            <div className="flex-none p-4 flex justify-center z-10">
                 <Button
                     onClick={() => setShowQuitConfirm(true)}
-                    className="relative group h-12 px-8 bg-slate-900/40 hover:bg-red-950/20 border border-white/5 hover:border-red-500/30 rounded-full transition-all duration-500 backdrop-blur-md overflow-hidden shadow-lg"
+                    className="h-10 px-6 bg-slate-800/80 hover:bg-red-900/40 border border-white/5 text-slate-400 hover:text-red-400 rounded-full text-xs font-bold tracking-widest backdrop-blur transition-all"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                    <span className="relative flex items-center gap-3 text-xs font-black uppercase tracking-[0.2em] text-slate-500 group-hover:text-red-400 transition-colors">
-                        <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        Abandonner
-                    </span>
+                    ABANDONNER
                 </Button>
             </div>
         </div>
