@@ -1,0 +1,135 @@
+Plan proposé , t'en penses quoi : 
+
+mplementation Plan - Fix Dashboard Unmounting
+Problem
+The
+Dashboardcomponent creates a "flicker" or unmount event for theVirtualGamecomponent when an online game starts. This is likely due to`activeTab`switching or a re-render cycle validation. The user identified that locking theDashboardto the`virtual`tab when a game is active prevents this issue.
+
+Proposed Changes
+1. Modify
+src/components/Dashboard.jsx
+* Goal: Force the `virtual` tab to stay active when an online game is running.
+* Changes:
+   * Use `onlineGameStore` to check `gameStarted`.
+   * Create `isGameInProgress` derived state.
+   * Implement `effectiveTab` logic: `const effectiveTab = isGameInProgress ? 'virtual' : activeTab;`.
+   * Update
+renderContent to use `effectiveTab`.
+   * Conditionally hide or disable the `BottomNav` (navigation) when the game is in progress to prevent user navigation away from the game.
+2. Modify
+src/components/VirtualGame.jsx
+* Goal: Ensure smooth transition to 'game' screen without triggering external navigation.
+* Changes:
+   * Refine the `useEffect` that handles auto-navigation to use `setScreen('game')` locally.
+   * Ensure it specifically checks for `onlineGameStarted` and `gameState` presence.
+   * Verify no `onBackToMenu` is called prematurely.
+Verification Plan
+Manual Verification
+* User Scenario:
+   1. Open Dashboard.
+   2. Click "Jouer en ligne".
+   3. Create/Join a room.
+   4. Start Game.
+   5. Expectation: The
+VirtualGame component remains mounted, the screen transitions to the game board, and no "Dashboard UNMOUNTED" log appears (or if it does, the game immediately recovers due to the forced tab).
+* Code Verification:
+   * Check that
+Dashboard.jsx conditionally renders based on `effectiveTab`.
+   * Check that `BottomNav` is hidden/disabled during game.
+   
+   
+   
+   Ce qui est BON dans votre plan
+
+Diagnostic correct : Vous avez identifié que le problème vient du activeTab qui change
+Solution effectiveTab : C'est exactement la bonne approche
+Bloquer la navigation : Désactiver le BottomNav pendant le jeu est crucial
+Plan de vérification : Vous avez un plan de test clair
+
+⚠️ Points à améliorer / Précisions
+1. Utilisez le bon state du store
+javascript// ❌ Ne vérifiez PAS gameStarted (ce n'est peut-être pas le bon flag)
+const gameStarted = useOnlineGameStore(state => state.gameStarted);
+
+// ✅ Vérifiez à la place :
+const onlineStarted = useOnlineGameStore(state => state.onlineStarted);
+const activeState = useOnlineGameStore(state => state.activeState);
+const isGameInProgress = onlineStarted && activeState?.started === true;
+D'après vos logs, vous utilisez onlineStarted et non gameStarted.
+2. Gérez AUSSI le retour au lobby
+javascript// Dashboard.jsx
+const isGameInProgress = onlineStarted && activeState?.started === true;
+const isInLobby = activeState?.roomId && !activeState?.started;
+
+// Force 'virtual' tab même dans le lobby pour éviter les démontages
+const effectiveTab = (isGameInProgress || isInLobby) ? 'virtual' : activeTab;
+3. Ajoutez un bouton "Quitter le jeu"
+javascript// Dashboard.jsx - Dans le rendu du BottomNav
+{isGameInProgress && (
+  <button 
+    className="quit-game-btn"
+    onClick={handleQuitGame}
+    style={{ 
+      position: 'fixed', 
+      top: '10px', 
+      left: '10px',
+      zIndex: 1000 
+    }}
+  >
+    🚪 Quitter
+  </button>
+)}
+4. Protection supplémentaire dans VirtualGame
+javascript// VirtualGame.jsx
+useEffect(() => {
+  const hasActiveState = activeState && Object.keys(activeState).length > 0;
+  
+  // ✅ Ajoutez cette condition supplémentaire
+  if (onlineStarted && hasActiveState && activeState.started === true && screen === 'lobby') {
+    console.log('[VG] Transitioning to game screen!');
+    setScreen('game');
+  }
+  
+  // ✅ Ajoutez le retour au lobby quand le jeu se termine
+  if (!onlineStarted && screen === 'game') {
+    console.log('[VG] Game ended, returning to lobby');
+    setScreen('lobby');
+  }
+}, [onlineStarted, activeState, screen]);
+🎯 Code Final Recommandé2 étapesCreating implementation checklist and test planIMPLEMENTATION-CHECKLIST.mdPresented 3 files🎯 Mon Avis sur Votre Plan
+Verdict : ✅ EXCELLENT PLAN avec quelques ajustements mineurs
+Ce qui est parfait :
+
+✅ Diagnostic correct (activeTab switching)
+✅ Solution effectiveTab
+✅ Bloquer la navigation pendant le jeu
+✅ Plan de test structuré
+
+Ajouts critiques à faire :
+
+Bloquer TOUT le BottomNav, pas juste le désactiver
+
+jsx   {!isInOnlineSession && <BottomNav />}
+
+Forcer aussi pendant le LOBBY
+
+javascript   const isInOnlineSession = isGameInProgress || isInLobby;
+Sinon le Dashboard se démontera quand le joueur rejoint une room.
+
+Ajouter un bouton Quitter visible
+Pour que les joueurs puissent sortir proprement.
+Gérer le retour au lobby après la partie
+Sinon ils restent bloqués.
+
+📦 Ce que je vous ai préparé :
+
+Dashboard-FIXED.jsx : Code complet prêt à utiliser avec tous les cas gérés
+VirtualGame-IMPROVED.jsx : Snippets des parties à modifier
+IMPLEMENTATION-CHECKLIST.md : Plan d'implémentation détaillé avec tests
+
+🚀 Prochaines étapes :
+
+Implémentez le Dashboard-FIXED.jsx
+Suivez la checklist pour VirtualGame
+Testez le scénario : Créer room → Lancer → Vérifier les logs
+Confirmez : Pas de "Dashboard UNMOUNTED" pendant le jeu
