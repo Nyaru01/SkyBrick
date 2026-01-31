@@ -31,6 +31,8 @@ import { cn } from '../lib/utils';
 import { AVATARS, getAvatarPath } from '../lib/avatars';
 import AvatarSelector from './AvatarSelector';
 import SkyjoLoader from './SkyjoLoader';
+import VersusBreakout from './VersusBreakout';
+
 
 // Player colors for avatars
 
@@ -620,15 +622,20 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
 
     // Start game
     const handleStartGame = () => {
-        const gamePlayers = players.map((p, i) => ({
-            id: `player-${i}`,
-            name: p.name.trim() || `Joueur ${i + 1}`,
-            emoji: p.emoji,
-        }));
-        startLocalGame(gamePlayers);
-        setInitialReveals({});
+        // Breakout Mode: Just switch to game screen
         setScreen('game');
     };
+
+    // ... (keep existing handleInitialReveal, handleCardClick etc. as they are needed for Online Mode) - Actually, for Local, they are NOT needed anymore if we switch to Breakout.
+    // But we must keep them for Online.
+
+    // ...
+
+    // RENDER LOGIC
+
+
+    // Default SkyJo/Online Render...
+
 
     // Handle initial reveal selection
     const handleInitialReveal = (playerIndex, cardIndex) => {
@@ -724,6 +731,13 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
         setOpenAvatarSelector(null);
     };
 
+    // Redirect to main menu if screen is 'menu' (Legacy menu removal)
+    useEffect(() => {
+        if (screen === 'menu' && onBackToMenu) {
+            onBackToMenu();
+        }
+    }, [screen, onBackToMenu]);
+
     // Back to menu
     const handleBackToMenu = () => {
         if (screen === 'game' && !isGameOver) {
@@ -816,12 +830,14 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
         />
     );
 
-    // Redirect to main menu if screen is 'menu' (Legacy menu removal)
-    useEffect(() => {
-        if (screen === 'menu' && onBackToMenu) {
-            onBackToMenu();
-        }
-    }, [screen, onBackToMenu]);
+    // RENDER LOGIC for Local/Versus Breakout
+    if (screen === 'game' && !onlineGameStarted && !isOnlineMode) {
+        // We pass confirmExit directly because VersusBreakout handles its own confirmation modal locally.
+        // Passing handleBackToMenu would trigger VirtualGame's modal which is unreachable here (hidden by early return).
+        return <VersusBreakout onBackToMenu={confirmExit} aiDifficulty={aiConfig.difficulty} />;
+    }
+
+
 
     if (screen === 'menu') {
         return null; // Don't render anything, wait for redirect
