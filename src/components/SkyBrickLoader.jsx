@@ -81,18 +81,25 @@ export default function SkyBrickLoader({ progress = 0 }) {
                         <span className="text-xl font-black text-white tabular-nums">{Math.round(progress)}%</span>
                     </div>
 
-                    {/* The Bar Itself */}
-                    <div className="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden border border-white/10 shadow-inner backdrop-blur-sm">
-                        <motion.div
-                            className="h-full bg-gradient-to-r from-[#00f2ff] to-[#9d00ff] relative"
-                            initial={{ width: "0%" }}
-                            animate={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-                            transition={{ ease: "circOut", duration: 0.5 }}
-                        >
-                            {/* Glow at the tip */}
-                            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white/40 to-transparent" />
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full blur-[4px] shadow-[0_0_10px_white]" />
-                        </motion.div>
+                    {/* The Brick Bar */}
+                    <div className="w-full h-8 flex gap-1 items-center justify-between">
+                        {Array.from({ length: 20 }).map((_, i) => {
+                            const isActive = i < Math.floor((Math.max(0, Math.min(100, progress)) / 100) * 20);
+                            return (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{
+                                        opacity: isActive ? 1 : 0.2,
+                                        scale: isActive ? 1 : 0.8,
+                                        backgroundColor: isActive ? '#00f2ff' : '#1e293b',
+                                        boxShadow: isActive ? '0 0 10px #00f2ff, 0 0 20px #00f2ff' : 'none'
+                                    }}
+                                    transition={{ duration: 0.3, delay: i * 0.02 }}
+                                    className="h-full flex-1 rounded-sm border border-white/10"
+                                />
+                            );
+                        })}
                     </div>
                 </div>
             </div>

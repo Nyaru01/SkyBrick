@@ -356,6 +356,41 @@ export const useFeedback = () => {
         vibrate([100, 50, 100, 50, 200]);
     }, [soundEnabled, vibrate]);
 
+    // Hover sound - fast high tick
+    const playHover = useCallback(() => {
+        if (!soundEnabled) return;
+        const now = Date.now();
+        if (now - lastSoundTime.current > 40) {
+            lastSoundTime.current = now;
+            playBeep(1200, 20, 0.05);
+        }
+    }, [soundEnabled]);
+
+    // Pause sound - power down
+    const playPause = useCallback(() => {
+        if (!soundEnabled) return;
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'running') {
+            try {
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+
+                gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + 0.3);
+            } catch (e) { }
+        }
+    }, [soundEnabled]);
+
     return {
         playSuccess,
         playClick,
@@ -369,6 +404,8 @@ export const useFeedback = () => {
         playSocialNotify,
         playSocialInvite,
         playAchievement,
+        playHover,
+        playPause,
         vibrate: (pattern) => {
             if (vibrationEnabled && navigator.vibrate) {
                 navigator.vibrate(pattern);

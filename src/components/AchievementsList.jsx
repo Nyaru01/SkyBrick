@@ -1,5 +1,6 @@
 import { useGameStore } from '../store/gameStore';
 import { Award, Trophy, Zap, Star } from 'lucide-react';
+import { Card, CardContent } from './ui/Card';
 
 const ALL_ACHIEVEMENTS = [
     { id: 'FIRST_BYTE', title: 'Premier Octet', description: 'Gagne ta première partie !', icon: Trophy, color: 'text-amber-500' },

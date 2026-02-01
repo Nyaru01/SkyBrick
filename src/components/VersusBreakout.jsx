@@ -81,8 +81,11 @@ export default function VersusBreakout({
     const [laserActive, setLaserActive] = useState(false);
 
     const bonusLockRef = useRef(false);
+    const aiFrozenUntilRef = useRef(0); // Timestamp when AI unfreezes
+    const gameStartTimeRef = useRef(0); // To track duration for pity bonus
+    const pityBonusGivenRef = useRef(false);
 
-    const { playClick, playError, playVictory, playCardPlace, playCardFlip, playCardDraw } = useFeedback();
+    const { playClick, playVictory, playStart, playError, playCardFlip, playCardPlace, playCardDraw, playHover, playPause } = useFeedback();
     const { play: playMusic, stop: stopMusic, getBass } = useReactiveAudio('/Music/stranger-things-124008.mp3', soundEnabled);
 
     useEffect(() => {
@@ -248,6 +251,11 @@ export default function VersusBreakout({
         if (gameMode !== 'BRICKS') {
             launchBall();
         }
+
+        // Reset specificrefs
+        aiFrozenUntilRef.current = 0;
+        gameStartTimeRef.current = Date.now();
+        pityBonusGivenRef.current = false;
 
 
         if (!isOnline || isHost) {
@@ -445,7 +453,13 @@ export default function VersusBreakout({
         document.addEventListener('touchstart', onTouchStart, { passive: false });
 
         const onCanvasClick = () => {
-            if (gameState === 'PLAYING') launchBall();
+            if (gameState === 'PLAYING') {
+                if (laserActive) {
+                    fireLaser();
+                } else {
+                    launchBall();
+                }
+            }
         };
         const canvas = canvasRef.current;
         if (canvas) canvas.addEventListener('pointerdown', onCanvasClick);
@@ -461,7 +475,24 @@ export default function VersusBreakout({
             if (canvas) canvas.removeEventListener('pointerdown', onCanvasClick);
             document.body.style.overscrollBehavior = originalOverscroll;
         };
-    }, [gameState, playerPaddleWidth, launchBall]);
+    }, [gameState, playerPaddleWidth, launchBall, laserActive]);
+
+    const fireLaser = useCallback(() => {
+        if (!laserActive) return;
+
+        const paddleX = playerPaddleRef.current.x;
+        const width = canvasSizeRef.current.width;
+
+        // Add 2 projectiles
+        projectilesRef.current.push(
+            { x: paddleX + 10, y: canvasSizeRef.current.height - 40, width: 4, height: 12, dy: -8, color: '#f00' },
+            { x: paddleX + playerPaddleWidth - 14, y: canvasSizeRef.current.height - 40, width: 4, height: 12, dy: -8, color: '#f00' }
+        );
+        playCardDraw(); // Pew pew sound
+
+        // Visual recoil
+        shakeRef.current += 2;
+    }, [laserActive, playerPaddleWidth, playCardDraw]);
 
     const explodeBrick = (col, row, isAi) => {
         const bricks = isAi ? aiBricksRef.current : playerBricksRef.current;
@@ -489,14 +520,37 @@ export default function VersusBreakout({
 
     const updateAI = useCallback(() => {
         if (gameMode !== 'AI' || isOnline) return; // Only AI in AI mode
+
+        // Frozen Logic
+        if (Date.now() < aiFrozenUntilRef.current) return;
+
         const ball = ballsRef.current[0]; // AI largely targets first ball
         if (!ball) return;
         const aiPaddle = aiPaddleRef.current;
         const width = canvasSizeRef.current.width;
         let targetX = ball.x - PADDLE_WIDTH / 2;
+
+        // AI Reaction Speeds based on SELECTED DIFFICULTY
         let reactionSpeed = 0.08;
-        if (aiDifficulty === 'EASY') reactionSpeed = 0.05;
-        if (aiDifficulty === 'HARD') reactionSpeed = 0.15;
+        if (selectedDifficulty === 'NOVICE') {
+            reactionSpeed = 0.022; // Even slower (was 0.035)
+
+            // Vision Limit for Novice: Only react if ball is in top 60% of screen or moving UP towards AI
+            const height = canvasSizeRef.current.height;
+            if (ball.y > height * 0.6 && ball.dy > 0) {
+                // Ball is deep in player territory and moving away -> AI slows down / stops
+                reactionSpeed = 0.005;
+                targetX = width / 2 - PADDLE_WIDTH / 2; // Lazily drift to center
+            }
+        }
+        if (selectedDifficulty === 'EXPERT') reactionSpeed = 0.09;
+        if (selectedDifficulty === 'OVERCLOCK') reactionSpeed = 0.15;
+
+        // Error Margin for Novice (Simulate human error)
+        if (selectedDifficulty === 'NOVICE' && Math.random() < 0.03) {
+            targetX += (Math.random() - 0.5) * 120; // Increased jitter (was 60)
+        }
+
         const dx = targetX - aiPaddle.x;
         aiPaddle.x += dx * reactionSpeed;
         if (aiPaddle.x < 0) aiPaddle.x = 0;
@@ -506,7 +560,27 @@ export default function VersusBreakout({
         if (aiBonusAvailable && Math.random() < 0.005) { // 0.5% chance per frame to use bonus
             activateAiBonus();
         }
-    }, [aiDifficulty, gameMode, aiBonusAvailable]);
+    }, [selectedDifficulty, gameMode, aiBonusAvailable]);
+
+    // Pity Timer Check
+    useEffect(() => {
+        if (gameState !== 'PLAYING' || gameMode !== 'AI' || selectedDifficulty !== 'NOVICE') return;
+
+        const timer = setInterval(() => {
+            if (!pityBonusGivenRef.current && Date.now() - gameStartTimeRef.current > 60000) {
+                // Grant Pity Bonus (Laser)
+                pityBonusGivenRef.current = true;
+                setPlayerBonus({ type: 'LASER' });
+                setLastNotification({
+                    type: 'success',
+                    message: 'Renfort : Missiles auto-guidés activés !',
+                    timestamp: Date.now()
+                });
+                playVictory();
+            }
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [gameState, gameMode, selectedDifficulty, setLastNotification, playVictory]);
 
     const update = useCallback(() => {
         if (gameState !== 'PLAYING') return;
@@ -798,6 +872,20 @@ export default function VersusBreakout({
                         }
                     });
                 });
+
+                // Check Paddle Collision (AI) - Freeze Mechanic
+                if (gameMode === 'AI' && !p.remove) {
+                    if (p.x + p.width > aiPaddle.x && p.x < aiPaddle.x + (aiPaddleWidth || PADDLE_WIDTH) &&
+                        p.y + p.height > aiPaddleY && p.y < aiPaddleY + PADDLE_HEIGHT) {
+
+                        p.remove = true;
+                        // Freeze AI
+                        aiFrozenUntilRef.current = Date.now() + 3000; // 3 seconds
+                        playCardFlip(); // Sound effect
+                        createShockwave(p.x, p.y, '#00f2ff'); // Blue shockwave
+                    }
+                }
+
             }
         });
         projectilesRef.current = projectilesRef.current.filter(p => !p.remove);
@@ -1117,6 +1205,14 @@ export default function VersusBreakout({
             return;
         }
 
+        // --- ZEN MODE: INFINITE RESPAWN ---
+        if (isZenMode && activePlayerBricks === 0 && playerBricksRef.current.length > 0 && !isOnline) {
+            // Generate new bricks smoothly
+            playVictory(); // Satisfying sound
+            playerBricksRef.current = createBricks(false); // Respawn bottom bricks
+            shakeRef.current = 10;
+        }
+
         // Draw Balls
         balls.forEach(ball => {
             // Safety Cap Speed
@@ -1314,7 +1410,11 @@ export default function VersusBreakout({
 
     useEffect(() => {
         requestRef.current = requestAnimationFrame(update);
-        return () => cancelAnimationFrame(requestRef.current);
+        return () => {
+            cancelAnimationFrame(requestRef.current);
+            if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
+            if (laserTimerRef.current) clearInterval(laserTimerRef.current);
+        };
     }, [update]);
 
     const activateBonus = () => {
@@ -1370,21 +1470,11 @@ export default function VersusBreakout({
         } else if (type === 'LASER') {
             setLaserActive(true);
 
-            // Auto fire logic
+            // Manual fire logic (handled in onCanvasClick/fireLaser)
             if (laserTimerRef.current) clearInterval(laserTimerRef.current);
-            laserTimerRef.current = setInterval(() => {
-                const paddleX = playerPaddleRef.current.x;
-                // Add 2 projectiles
-                projectilesRef.current.push(
-                    { x: paddleX + 10, y: height - 40, width: 4, height: 12, dy: -8, color: '#f00' },
-                    { x: paddleX + playerPaddleWidth - 14, y: height - 40, width: 4, height: 12, dy: -8, color: '#f00' }
-                );
-                playCardDraw(); // Pew pew sound
-            }, 400);
 
             setTimeout(() => {
                 setLaserActive(false);
-                if (laserTimerRef.current) clearInterval(laserTimerRef.current);
             }, 8000); // 8 seconds of laser
         }
 
@@ -1392,6 +1482,10 @@ export default function VersusBreakout({
         // Release lock after short delay to prevent double submissions but allow next bonus
         setTimeout(() => { bonusLockRef.current = false; }, 500);
     };
+
+    // Pity Bonus Check (In Update Loop ideally, but here hook for simplicity or add to update)
+    // We'll add it to the update loop main logic for consistency.
+
 
     const activateAiBonus = () => {
         if (!aiBonusAvailable) return;
@@ -1506,7 +1600,7 @@ export default function VersusBreakout({
                                 onClick={() => {
                                     if (!isOnline) {
                                         setGameState('PAUSED');
-                                        playClick();
+                                        playPause();
                                     }
                                 }}
                                 disabled={isOnline}
@@ -1514,6 +1608,7 @@ export default function VersusBreakout({
                                     ? 'bg-slate-800 border border-white/5 opacity-50 cursor-not-allowed'
                                     : 'bg-white/5 hover:bg-cyan-500/20 border border-white/10 active:scale-95'
                                     }`}
+                                onMouseEnter={() => !isOnline && playHover()}
                             >
                                 {isOnline ? (
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -1535,6 +1630,22 @@ export default function VersusBreakout({
                 </div>
             )}
 
+            {/* LASER BUTTON (MOBILE/DESKTOP) */}
+            <AnimatePresence>
+                {laserActive && (
+                    <motion.button
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => { e.stopPropagation(); fireLaser(); }}
+                        className="absolute bottom-32 right-8 z-[70] w-20 h-20 rounded-full bg-red-500/90 border-4 border-red-400 shadow-[0_0_30px_#ef4444] flex items-center justify-center animate-pulse"
+                    >
+                        <Zap className="w-10 h-10 text-white fill-white" />
+                    </motion.button>
+                )}
+            </AnimatePresence>
+
             {/* Game Area */}
             <div className="flex-1 relative w-full px-1 pb-1">
                 <div className="absolute inset-0 overflow-hidden rounded-3xl bg-slate-900 shadow-[inset_0_0_100px_rgba(0,242,255,0.05)] border border-white/5">
@@ -1549,9 +1660,9 @@ export default function VersusBreakout({
                         {gameState === 'PAUSED' && (
                             <motion.div
                                 key="pause-overlay"
-                                initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                                animate={{ opacity: 1, backdropFilter: "blur(10px)" }}
-                                exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                                initial={{ opacity: 0, backdropFilter: "blur(0px)", scale: 0.95 }}
+                                animate={{ opacity: 1, backdropFilter: "blur(10px)", scale: 1 }}
+                                exit={{ opacity: 0, backdropFilter: "blur(0px)", scale: 0.95 }}
                                 className="absolute inset-0 bg-slate-950/80 z-50 flex flex-col items-center justify-center p-6 space-y-6"
                             >
                                 <div className="text-center space-y-2">
@@ -1619,6 +1730,7 @@ export default function VersusBreakout({
 
                                         <button
                                             onClick={() => setShowGuide(false)}
+                                            onMouseEnter={() => playHover()}
                                             className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all"
                                         >
                                             RETOUR
@@ -1631,6 +1743,7 @@ export default function VersusBreakout({
                                                 setGameState('PLAYING');
                                                 playClick();
                                             }}
+                                            onMouseEnter={() => playHover()}
                                             className="w-full py-4 bg-cyan-500 hover:bg-cyan-400 text-white font-black text-lg rounded-xl shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-3"
                                         >
                                             <Play className="w-5 h-5 fill-current" />
@@ -1639,6 +1752,7 @@ export default function VersusBreakout({
 
                                         <button
                                             onClick={() => setShowGuide(true)}
+                                            onMouseEnter={() => playHover()}
                                             className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-sm rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3 border border-cyan-500/20"
                                         >
                                             <Monitor className="w-4 h-4" />
@@ -1650,6 +1764,7 @@ export default function VersusBreakout({
                                                 onBackToMenu();
                                                 playClick();
                                             }}
+                                            onMouseEnter={() => playHover()}
                                             className="w-full py-4 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 border border-white/10 text-slate-300 font-bold text-sm rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3"
                                         >
                                             <LogOut className="w-5 h-5" />
@@ -1776,11 +1891,13 @@ export default function VersusBreakout({
                                             {/* ZEN MODE ENTRY */}
                                             <button
                                                 onClick={() => {
-                                                    setSelectedMode('SOLO');
-                                                    setGameState('PLAYING');
-                                                    setLives(Infinity);
+                                                    playClick();
+                                                    setGameMode('BRICKS');
                                                     setIsZenMode(true);
-                                                    startSolo();
+                                                    setIsBossMode(false);
+                                                    setLives(Infinity);
+                                                    initGame();
+                                                    setGameState('PLAYING');
                                                 }}
                                                 className="w-full relative h-16 bg-gradient-to-br from-emerald-900/40 to-slate-900/40 border border-emerald-500/30 rounded-2xl p-4 flex flex-row items-center justify-between gap-4 group overflow-hidden transition-all hover:border-emerald-400/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)] active:scale-95 mt-2"
                                             >
