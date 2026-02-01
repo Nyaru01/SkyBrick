@@ -295,7 +295,7 @@ export default function Tutorial({ isOpen, onClose }) {
                     className="relative w-full max-w-md glass-premium overflow-hidden rounded-[3rem] shadow-2xl border-white/20"
                 >
                     {/* Header Decoration */}
-                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-skyjo-blue/5 to-transparent pointer-events-none" />
+                    <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none" />
 
                     {/* Header */}
                     <div className="p-8 pb-2 flex items-center justify-between relative z-10">
@@ -304,7 +304,7 @@ export default function Tutorial({ isOpen, onClose }) {
                                 <Icon className={`w-6 h-6 ${step.color}`} />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-skyjo-blue uppercase tracking-[0.2em]">
+                                <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]">
                                     Guide de Jeu
                                 </span>
                                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
@@ -322,7 +322,7 @@ export default function Tutorial({ isOpen, onClose }) {
                         {STEPS.map((_, i) => (
                             <div
                                 key={i}
-                                className={`flex-1 rounded-full transition-all duration-300 ${i <= currentStep ? 'bg-skyjo-blue' : 'bg-white/10'}`}
+                                className={`flex-1 rounded-full transition-all duration-300 ${i <= currentStep ? 'bg-cyan-500' : 'bg-white/10'}`}
                             />
                         ))}
                     </div>
@@ -362,7 +362,7 @@ export default function Tutorial({ isOpen, onClose }) {
                         )}
                         <Button
                             onClick={handleNext}
-                            className="flex-[2] h-12 rounded-2xl bg-skyjo-blue hover:bg-skyjo-blue/90 font-black shadow-lg shadow-skyjo-blue/30"
+                            className="flex-[2] h-12 rounded-2xl bg-cyan-500 hover:bg-cyan-600 font-black shadow-lg shadow-cyan-500/30"
                         >
                             {currentStep === STEPS.length - 1 ? "J'AI COMPRIS !" : "SUIVANT"}
                             {currentStep < STEPS.length - 1 && <ChevronRight className="w-5 h-5 ml-1" />}

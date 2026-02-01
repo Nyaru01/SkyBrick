@@ -46,10 +46,10 @@ export default function ScoreInput({ players, onSave, onCancel, isEmbedded = fal
             {!isEmbedded && (
                 <CardHeader className="border-b border-white/10 dark:border-white/5 pb-4 relative overflow-hidden">
                     {/* Decorative header glow */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-skyjo-blue/30 blur-md" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1 bg-cyan-500/30 blur-md" />
 
                     <CardTitle className="text-center text-slate-900 dark:text-slate-100 font-black tracking-tight flex items-center justify-center gap-2">
-                        <Check className="h-5 w-5 text-skyjo-blue" />
+                        <Check className="h-5 w-5 text-cyan-400" />
                         Fin de manche
                     </CardTitle>
                     <p className="text-center text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
@@ -95,7 +95,7 @@ export default function ScoreInput({ players, onSave, onCancel, isEmbedded = fal
                                 className={cn(
                                     "relative p-4 rounded-3xl border transition-all duration-300 animate-in fade-in shadow-sm group",
                                     isFinisher
-                                        ? "bg-skyjo-blue/10 border-skyjo-blue shadow-skyjo-blue/10 ring-1 ring-skyjo-blue/20"
+                                        ? "bg-cyan-500/10 border-cyan-500 shadow-cyan-500/10 ring-1 ring-cyan-500/20"
                                         : "bg-white/40 dark:bg-slate-700/40 border-white/20 dark:border-white/5 hover:bg-white/60 dark:hover:bg-slate-700/60"
                                 )}
                                 style={{ animationDelay: `${index * 80}ms` }}
@@ -107,7 +107,7 @@ export default function ScoreInput({ players, onSave, onCancel, isEmbedded = fal
                                         {/* Avatar with Status Ring */}
                                         <div className={cn(
                                             "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg relative overflow-hidden border-2 transition-all duration-300 group-hover:scale-105",
-                                            isFinisher ? "border-skyjo-blue bg-skyjo-blue/20 ring-4 ring-skyjo-blue/20 scale-110 z-10" : "border-white/30 dark:border-white/10 bg-slate-800"
+                                            isFinisher ? "border-cyan-500 bg-cyan-500/20 ring-4 ring-cyan-500/20 scale-110 z-10" : "border-white/30 dark:border-white/10 bg-slate-800"
                                         )}>
                                             <div className="absolute inset-0 bg-white">
                                                 {p.avatarId ? (
@@ -125,7 +125,7 @@ export default function ScoreInput({ players, onSave, onCancel, isEmbedded = fal
 
                                             {/* Selection Overlay */}
                                             {isFinisher && (
-                                                <div className="absolute inset-0 bg-skyjo-blue/20 backdrop-blur-[0.5px] flex items-center justify-center">
+                                                <div className="absolute inset-0 bg-cyan-500/20 backdrop-blur-[0.5px] flex items-center justify-center">
                                                     <Check className="h-6 w-6 text-white drop-shadow-md" strokeWidth={4} />
                                                 </div>
                                             )}
@@ -135,7 +135,7 @@ export default function ScoreInput({ players, onSave, onCancel, isEmbedded = fal
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 <span className={cn(
                                                     "font-black text-sm sm:text-base leading-tight",
-                                                    isFinisher ? "text-skyjo-blue" : "text-slate-900 dark:text-white"
+                                                    isFinisher ? "text-cyan-400" : "text-slate-900 dark:text-white"
                                                 )}>
                                                     {p.name}
                                                 </span>
@@ -192,7 +192,7 @@ export default function ScoreInput({ players, onSave, onCancel, isEmbedded = fal
                                                 className={cn(
                                                     "w-16 sm:w-20 text-center font-black text-xl h-14 rounded-2xl shadow-inner transition-all",
                                                     scores[p.id] !== ''
-                                                        ? "border-skyjo-blue bg-white dark:bg-slate-900 text-skyjo-blue ring-4 ring-skyjo-blue/10"
+                                                        ? "border-cyan-500 bg-white dark:bg-slate-900 text-cyan-500 ring-4 ring-cyan-500/10"
                                                         : "bg-slate-100/50 dark:bg-slate-900/50 border-transparent text-slate-400 focus:bg-white dark:focus:bg-slate-900"
                                                 )}
                                                 placeholder="0"
@@ -209,7 +209,7 @@ export default function ScoreInput({ players, onSave, onCancel, isEmbedded = fal
                 <div className="pt-2">
                     <Button
                         onClick={handleSubmit}
-                        className="w-full bg-skyjo-blue hover:bg-skyjo-blue/90 h-16 rounded-3xl font-black text-xl shadow-xl shadow-skyjo-blue/20 transition-all active:scale-95 group"
+                        className="w-full bg-cyan-500 hover:bg-cyan-600 h-16 rounded-3xl font-black text-xl shadow-xl shadow-cyan-500/20 transition-all active:scale-95 group"
                     >
                         Valider la manche
                         <Check className="ml-2 h-6 w-6 group-hover:scale-110 transition-transform" strokeWidth={4} />

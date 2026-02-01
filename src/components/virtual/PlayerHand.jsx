@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import SkyjoCard from './SkyjoCard';
+import SkyBrickCard from './SkyBrickCard';
 import { cn } from '../../lib/utils';
 import { getAvatarPath } from '../../lib/avatars';
 
@@ -23,7 +23,7 @@ const PlayerHand = memo(function PlayerHand({
     size = 'md',
     shakingCardIndex = null,
 }) {
-    // Skyjo grid: 4 columns x 3 rows = 12 cards
+    // SkyBrick grid: 4 columns x 3 rows = 12 cards
     // Layout: column-first (0,1,2 = col1, 3,4,5 = col2, etc.)
     const getCardIndex = (row, col) => col * 3 + row;
 
@@ -178,7 +178,7 @@ const PlayerHand = memo(function PlayerHand({
                                 style={{ position: 'relative', zIndex: 1 }}
                                 id={`card-${player.id}-${cardIndex}`}
                             >
-                                <SkyjoCard
+                                <SkyBrickCard
                                     card={displayCard}
                                     size={size}
                                     isSelected={selectedCardIndex === cardIndex || isPendingReveal}

@@ -153,7 +153,7 @@ export default function SettingsPage({ onViewChangelog }) {
             <div className="relative text-center py-8">
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
                 <h1 className="relative text-4xl font-black text-white drop-shadow-lg tracking-tight flex items-center justify-center gap-3">
-                    <Settings className="w-8 h-8 text-skyjo-blue animate-spin-slow-reverse" />
+                    <Settings className="w-8 h-8 text-cyan-400 animate-spin-slow-reverse" />
                     RÉGLAGES
                 </h1>
                 <p className="relative text-sm text-sky-200/60 font-medium uppercase tracking-widest mt-2">

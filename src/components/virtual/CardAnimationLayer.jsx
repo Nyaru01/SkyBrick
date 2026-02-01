@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import SkyjoCard from './SkyjoCard';
+import SkyBrickCard from './SkyBrickCard';
 
 /**
  * CardAnimationLayer
@@ -93,7 +93,7 @@ export default function CardAnimationLayer({ pendingAnimation, onClear }) {
                 }}
                 onAnimationComplete={handleAnimationComplete}
             >
-                <SkyjoCard
+                <SkyBrickCard
                     card={animationState.card}
                     isRevealed={animationState.card?.isRevealed}
                     size="md"

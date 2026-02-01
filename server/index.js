@@ -18,7 +18,7 @@ import {
     discardAndReveal,
     calculateFinalScores,
     endTurn
-} from '../src/lib/skyjoEngine.js';
+} from '../src/lib/skyBrickEngine.js';
 
 dotenv.config();
 
@@ -440,6 +440,16 @@ const io = new Server(httpServer, {
 });
 app.locals.io = io;
 
+// Diagnostic logging for handshake errors
+io.engine.on("connection_error", (err) => {
+    console.log('[SOCKET ENGINE ERROR]', {
+        url: err.req.url,
+        code: err.code,
+        message: err.message,
+        context: err.context
+    });
+});
+
 const rooms = new Map();
 const userStatus = new Map(); // userId -> Set of socketIds
 const userMetadata = new Map(); // userId -> {status, etc}
@@ -693,6 +703,32 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('breakout_init', ({ roomCode, playerBricks, aiBricks }) => {
+        console.log(`[BREAKOUT] Init room ${roomCode} from ${socket.id}`);
+        socket.to(roomCode).emit('breakout_init', {
+            playerId: socket.id,
+            playerBricks,
+            aiBricks
+        });
+    });
+
+    socket.on('breakout_sync', ({ roomCode, paddleX, score, opponentScore, balls, playerBricks, opponentBricks, lives, gameState, isGameOver, winner }) => {
+        // Broadcast to everyone else in the room
+        socket.to(roomCode).emit('breakout_sync', {
+            playerId: socket.id,
+            paddleX,
+            score,
+            opponentScore,
+            balls,
+            playerBricks,
+            opponentBricks,
+            lives,
+            gameState,
+            isGameOver,
+            winner
+        });
+    });
+
     socket.on('invite_friend', async ({ friendId, roomCode, fromName }) => {
         const stringFriendId = String(friendId);
         console.log(`[INVITE] From ${fromName} to ${stringFriendId} for room ${roomCode}`);
@@ -883,7 +919,7 @@ app.get('*', (req, res) => {
             // In dev mode, dist/index.html doesn't exist. 
             // Return 200 with HTML only for root or frontend-y paths, 404 otherwise.
             if (req.path === '/' || !req.path.includes('.')) {
-                res.status(200).send('<h1>SkyJo Server Running</h1>');
+                res.status(200).send('<h1>SkyBrick Server Running</h1>');
             } else {
                 res.status(404).send('Not found');
             }
@@ -891,5 +927,5 @@ app.get('*', (req, res) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

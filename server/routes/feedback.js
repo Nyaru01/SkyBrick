@@ -120,7 +120,7 @@ router.get('/admin/online-users', adminAuth, (req, res) => {
         const onlineUsers = Array.from(io.sockets.sockets.values()).map(socket => ({
             id: socket.id,
             // Attempt to retrieve user data attached to socket
-            // In SkyJo implementation, dbId or playerName might be attached
+            // In SkyBrick implementation, dbId or playerName might be attached
             // Let's inspect what we typically attach
             dbId: socket.dbId || null,
             username: socket.playerName || 'Anonyme',

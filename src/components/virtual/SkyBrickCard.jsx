@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
-import { CARD_COLORS } from '../../lib/skyjoEngine';
+import { CARD_COLORS } from '../../lib/skyBrickEngine';
 import { useGameStore } from '../../store/gameStore';
 import { getCardSkinPath } from '../../lib/skinUtils';
 
@@ -13,8 +13,8 @@ const triggerHaptic = () => {
 };
 
 /**
- * Skyjo Card Component - Skeuomorphic Design
- * Reproduces the physical Skyjo card appearance with mosaic texture
+ * SkyBrick Card Component - Skeuomorphic Design
+ * Reproduces the physical SkyBrick card appearance with mosaic texture
  */
 
 // Mosaic color schemes for each card color
@@ -100,7 +100,7 @@ const MosaicPattern = ({ colors, id }) => (
     </svg>
 );
 
-const SkyjoCard = memo(function SkyjoCard({
+const SkyBrickCard = memo(function SkyBrickCard({
     card,
     size = 'md',
     isSelected = false,
@@ -316,4 +316,4 @@ const SkyjoCard = memo(function SkyjoCard({
     );
 });
 
-export default SkyjoCard;
+export default SkyBrickCard;

@@ -12,7 +12,7 @@ import DrawDiscard from './virtual/DrawDiscard';
 import DrawDiscardPopup from './virtual/DrawDiscardPopup';
 import DrawDiscardTrigger from './virtual/DrawDiscardTrigger';
 import CardAnimationLayer from './virtual/CardAnimationLayer';
-import SkyjoCard from './virtual/SkyjoCard';
+import SkyBrickCard from './virtual/SkyBrickCard';
 import HostLeftOverlay from './virtual/HostLeftOverlay';
 import LevelUpCelebration from './LevelUpCelebration';
 import ExperienceBar from './ExperienceBar';
@@ -21,8 +21,8 @@ import { useVirtualGameStore, selectAIMode, selectAIPlayers, selectIsCurrentPlay
 import { useOnlineGameStore } from '../store/onlineGameStore';
 import { useSocialStore } from '../store/socialStore';
 import { useGameStore } from '../store/gameStore';
-import { calculateFinalScores } from '../lib/skyjoEngine';
-import { AI_DIFFICULTY, chooseInitialCardsToReveal } from '../lib/skyjoAI';
+import { calculateFinalScores } from '../lib/skyBrickEngine';
+import { AI_DIFFICULTY, chooseInitialCardsToReveal } from '../lib/skyBrickAI';
 import { useFeedback } from '../hooks/useFeedback';
 import { useBackgroundMusic } from '../hooks/useBackgroundMusic';
 import { useNotifications } from '../hooks/useNotifications';
@@ -30,7 +30,7 @@ import { cn } from '../lib/utils';
 
 import { AVATARS, getAvatarPath } from '../lib/avatars';
 import AvatarSelector from './AvatarSelector';
-import SkyjoLoader from './SkyjoLoader';
+import SkyBrickLoader from './SkyBrickLoader';
 import VersusBreakout from './VersusBreakout';
 
 
@@ -41,8 +41,8 @@ const PLAYER_EMOJIS = ['🐱', '🐶', '🦊', '🐻', '🐼', '🦁', '🐸', '
 const PLAYER_COLORS = ['🐱', '🐶', '🦊', '🐻', '🐼', '🦁', '🐸', '🐵']; // Backward compat for local
 
 /**
- * Virtual Skyjo Game Component
- * Main component for playing virtual Skyjo locally
+ * Virtual SkyBrick Game Component
+ * Main component for playing virtual SkyBrick locally
  */
 export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     // 1. Data Stores
@@ -193,8 +193,8 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
 
     // Local State for Lobby
     const [lobbyCode, setLobbyCode] = useState('');
-    const [myPseudo, setMyPseudo] = useState(() => userProfile?.name || localStorage.getItem('skyjo_player_pseudo') || '');
-    const [myAvatarId, setMyAvatarId] = useState(() => userProfile?.avatarId || localStorage.getItem('skyjo_player_avatar_id') || 'cat');
+    const [myPseudo, setMyPseudo] = useState(() => userProfile?.name || localStorage.getItem('skybrick_player_pseudo') || '');
+    const [myAvatarId, setMyAvatarId] = useState(() => userProfile?.avatarId || localStorage.getItem('skybrick_player_avatar_id') || 'cat');
     // Removed local notification state
     const [hasPlayedVictory, setHasPlayedVictory] = useState(false);
     const [showRulesModal, setShowRulesModal] = useState(false);
@@ -210,8 +210,8 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
 
     // AI Config State - Load from localStorage for persistence
     const [aiConfig, setAIConfig] = useState(() => {
-        const savedPseudo = localStorage.getItem('skyjo_player_pseudo') || '';
-        const savedAvatarId = localStorage.getItem('skyjo_player_avatar_id') || 'cat';
+        const savedPseudo = localStorage.getItem('skybrick_player_pseudo') || '';
+        const savedAvatarId = localStorage.getItem('skybrick_player_avatar_id') || 'cat';
         return {
             playerName: savedPseudo,
             playerAvatarId: savedAvatarId,
@@ -246,20 +246,20 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     // Save pseudo and emoji to localStorage when they change
     useEffect(() => {
         if (aiConfig.playerName) {
-            localStorage.setItem('skyjo_player_pseudo', aiConfig.playerName);
+            localStorage.setItem('skybrick_player_pseudo', aiConfig.playerName);
         }
         if (aiConfig.playerAvatarId) {
-            localStorage.setItem('skyjo_player_avatar_id', aiConfig.playerAvatarId);
+            localStorage.setItem('skybrick_player_avatar_id', aiConfig.playerAvatarId);
         }
     }, [aiConfig.playerName, aiConfig.playerAvatarId]);
 
     // Also save from online mode
     useEffect(() => {
         if (myPseudo) {
-            localStorage.setItem('skyjo_player_pseudo', myPseudo);
+            localStorage.setItem('skybrick_player_pseudo', myPseudo);
         }
         if (myAvatarId) {
-            localStorage.setItem('skyjo_player_avatar_id', myAvatarId);
+            localStorage.setItem('skybrick_player_avatar_id', myAvatarId);
         }
     }, [myPseudo, myAvatarId]);
 
@@ -376,7 +376,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
 
                 // Send browser notification if tab is in background
                 if (isTabHidden()) {
-                    sendNotification('Skyjo - Nouveau joueur ! 🎮', {
+                    sendNotification('SkyBrick - Nouveau joueur ! 🎮', {
                         body: onlineLastNotificationRaw.message,
                         tag: 'player-joined', // Prevents duplicate notifications
                         renotify: true
@@ -634,7 +634,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     // RENDER LOGIC
 
 
-    // Default SkyJo/Online Render...
+    // Default SkyBrick/Online Render...
 
 
     // Handle initial reveal selection
@@ -834,7 +834,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     if (screen === 'game' && !onlineGameStarted && !isOnlineMode) {
         // We pass confirmExit directly because VersusBreakout handles its own confirmation modal locally.
         // Passing handleBackToMenu would trigger VirtualGame's modal which is unreachable here (hidden by early return).
-        return <VersusBreakout onBackToMenu={confirmExit} aiDifficulty={aiConfig.difficulty} />;
+        return <VersusBreakout onBackToMenu={confirmExit} aiDifficulty={aiConfig.difficulty} autoStart={true} />;
     }
 
 
@@ -1131,8 +1131,8 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                         onClick={() => {
                                             const playerName = onlinePlayers.find(p => p.id === socketId)?.name || 'Un ami';
                                             navigator.share({
-                                                title: 'Partie Skyjo',
-                                                text: `${playerName} vous invite à rejoindre une partie de Skyjo en ligne !\n\nCode de salle : ${onlineRoomCode}`,
+                                                title: 'Partie SkyBrick',
+                                                text: `${playerName} vous invite à rejoindre une partie de SkyBrick en ligne !\n\nCode de salle : ${onlineRoomCode}`,
                                                 url: window.location.href
                                             }).catch(() => { });
                                         }}
@@ -1455,7 +1455,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                                     size="sm"
                                                     className={`h-8 px-4 rounded-full text-[10px] font-black shadow-lg active:scale-95 transition-all ${friend.isOnline
                                                         ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
-                                                        : 'bg-slate-700 hover:bg-skyjo-blue text-slate-300 hover:text-white'
+                                                        : 'bg-slate-700 hover:bg-cyan-500 text-slate-300 hover:text-white'
                                                         }`}
                                                     onClick={() => {
                                                         if (onlineRoomCode) {
@@ -1496,40 +1496,53 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
         );
     }
 
-    // Early return if no game state
-    if (!activeGameState) {
-        return null;
-    }
-
     // Calculate the local player's index in the game state
     // In online mode, try to find by socket.id first, then fallback to dbId (for reconnects)
     const currentSocketId = isOnlineMode ? (getSocketId?.() || socketId) : null;
     let myPlayerIndex = 0;
 
     if (isOnlineMode) {
-        const players = activeGameState?.players || [];
+        const gameStatePlayers = activeGameState?.players || [];
         // 1. Try socket ID
-        myPlayerIndex = players.findIndex(p => p.id === currentSocketId);
+        myPlayerIndex = gameStatePlayers.findIndex(p => p.id === currentSocketId);
 
         // 2. Fallback to DB ID if available
         if (myPlayerIndex === -1 && userProfile?.id) {
-            console.log(`[VG] Socket ID mismatch, trying fallback to dbId: ${userProfile.id}`);
-            myPlayerIndex = players.findIndex(p => String(p.dbId) === String(userProfile.id));
+            myPlayerIndex = gameStatePlayers.findIndex(p => String(p.dbId) === String(userProfile.id));
         }
+    }
 
-        console.log(`[VG] Render: screen=${screen}, isOnline=${isOnlineMode}, myIdx=${myPlayerIndex}, socketId=${currentSocketId}, dbId=${userProfile?.id}`);
+    // --- ONLINE BREAKOUT MODE ---
+    if (isOnlineMode && onlineGameStarted) {
+        return (
+            <div className="h-full w-full bg-slate-950 flex flex-col">
+                <VersusBreakout
+                    isOnline={true}
+                    autoStart={true}
+                    onBackToMenu={() => {
+                        leaveRoom();
+                        onBackToMenu?.(); // Using prop instead of undefined onBack
+                    }}
+                />
+            </div>
+        );
+    }
 
-        if (myPlayerIndex === -1 && activeGameState) {
-            console.warn("[VG] Player index not found even with fallback. Players:", players.map(p => ({ id: p.id, dbId: p.dbId })));
-            // Prevent crash by showing loading or error state instead of rendering undefined player
-            return (
-                <div className="flex flex-col items-center justify-center min-h-[50vh]">
-                    <SkyjoLoader progress={100} />
-                    <p className="mt-4 text-white font-bold animate-pulse">Synchronisation...</p>
-                    <p className="text-xs text-white/50 mt-2">ID: {currentSocketId?.substr(0, 4)}...</p>
-                </div>
-            );
-        }
+    if (!activeGameState) {
+        return null;
+    }
+
+    if (myPlayerIndex === -1 && activeGameState) {
+        const gameStatePlayers = activeGameState?.players || [];
+        console.warn("[VG] Player index not found even with fallback. Players:", gameStatePlayers.map(p => ({ id: p.id, dbId: p.dbId })));
+        // Prevent crash by showing loading or error state instead of rendering undefined player
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh]">
+                <SkyBrickLoader progress={100} />
+                <p className="mt-4 text-white font-bold animate-pulse">Synchronisation...</p>
+                <p className="text-xs text-white/50 mt-2">ID: {currentSocketId?.substr(0, 4)}...</p>
+            </div>
+        );
     }
 
     // Determine the opponent's index (for 2-player games)
@@ -1791,7 +1804,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
 
                                                 return card ? (
                                                     <div key={`${score.playerId}-card-${cardIdx}`} className="relative">
-                                                        <SkyjoCard
+                                                        <SkyBrickCard
                                                             card={{ ...card, isRevealed: true }}
                                                             size="xs"
                                                             className={cn(
@@ -1843,7 +1856,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
                             <Button
-                                className="flex-1 bg-skyjo-blue hover:bg-skyjo-blue/90 text-white"
+                                className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
                                 disabled={isOnlineMode && isNextRoundPending && !(onlineTimeoutExpired && onlineIsHost)}
                                 onClick={() => {
                                     if (isOnlineMode) {
@@ -1862,7 +1875,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                         if (activeGameState.phase === 'FINISHED') {
                                             const roundResults = calculateFinalScores(activeGameState);
                                             // Find round winner (strictly lowest score wins round?) 
-                                            // Skyjo rules: lowest score wins round.
+                                            // SkyBrick rules: lowest score wins round.
                                             // Sort by score ascending
                                             const sortedResults = [...roundResults].sort((a, b) => a.finalScore - b.finalScore);
                                             const roundWinner = sortedResults[0];
@@ -1982,7 +1995,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
     return (
         <div
             className={cn(
-                "skyjo-game-container max-w-3xl mx-auto p-0 animate-in fade-in relative min-h-[100dvh] flex flex-col overflow-x-hidden touch-none pb-safe-plus",
+                "skybrick-game-container max-w-3xl mx-auto p-0 animate-in fade-in relative min-h-[100dvh] flex flex-col overflow-x-hidden touch-none pb-safe-plus",
                 activeGameState?.players?.length <= 2 ? "justify-between py-2" : "justify-start gap-2 py-1 pb-6"
             )}
         >
@@ -2236,7 +2249,7 @@ export default function VirtualGame({ initialScreen = 'menu', onBackToMenu }) {
                                             const col = Math.floor(cardIdx / 3);
                                             const actualCardIdx = col * 3 + row;
                                             return (
-                                                <SkyjoCard
+                                                <SkyBrickCard
                                                     key={cardIdx}
                                                     card={player.hand[actualCardIdx]}
                                                     size="sm"

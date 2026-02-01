@@ -7,7 +7,7 @@ import { useGameStore } from './gameStore';
 // Dynamic socket URL: in production use same origin, in dev use localhost
 const SOCKET_URL = import.meta.env.PROD
     ? window.location.origin
-    : 'http://localhost:3000';
+    : 'http://localhost:3001';
 
 export const socket = io(SOCKET_URL, {
     autoConnect: false,
@@ -40,6 +40,21 @@ export const useOnlineGameStore = create((set, get) => ({
     gameWinner: null,
     readyStatus: { readyCount: 0, totalPlayers: 0 }, // Track ready players for next round
     timeoutExpired: false, // True when 10s timeout has passed and host can force-start
+
+    // Breakout Online State
+    breakoutState: {
+        paddleX: 0.5,
+        opponentPaddleX: 0.5,
+        balls: [],
+        playerBricks: null,
+        opponentBricks: null,
+        score: 0,
+        opponentScore: 0,
+        lives: 3,
+        gameState: null,
+        isGameOver: false,
+        winner: null
+    },
 
     // Redirection State (when host leaves)
     redirectionState: { active: false, timer: 5, reason: '' },
@@ -334,6 +349,90 @@ export const useOnlineGameStore = create((set, get) => ({
                     }
                 });
             });
+
+            socket.on('breakout_init', (data) => {
+                const { playerId, playerBricks, opponentBricks } = data;
+                console.log("📥 [STORE] Received breakout_init from:", playerId);
+                if (playerId !== socket.id) {
+                    set(state => ({
+                        breakoutState: {
+                            ...state.breakoutState,
+                            // Map Host BOTTOM to Guest TOP (opponentBricks)
+                            // Map Host TOP to Guest BOTTOM (playerBricks)
+                            playerBricks: opponentBricks,
+                            opponentBricks: playerBricks
+                        }
+                    }));
+                }
+            });
+
+            socket.on('breakout_sync', (data) => {
+                // Flatten data handling
+                const { playerId, paddleX, balls, playerBricks, opponentBricks, score, opponentScore, lives, gameState, isGameOver, winner } = data;
+
+                if (playerId !== socket.id) {
+                    const state = get().breakoutState;
+
+                    // Helper to merge bricks without losing X/Y if they exist in state
+                    const mergeBricks = (currentBricks, newBricks) => {
+                        if (!newBricks) return currentBricks;
+                        if (!currentBricks) return newBricks;
+
+                        return newBricks.map((col, c) => {
+                            // If dimensions don't match, fallback to new
+                            if (!col) return col;
+                            return col.map((brick, r) => {
+                                const currentBrick = currentBricks[c]?.[r];
+                                // If we have existing full data (with x,y), preserve it and only update status/hits
+                                if (currentBrick && currentBrick.x !== undefined) {
+                                    return {
+                                        ...currentBrick,
+                                        ...brick,
+                                        // Ensure x/y are definitely preserved even if newBrick has them as undefined (shouldn't happen but safety)
+                                        x: currentBrick.x,
+                                        y: currentBrick.y,
+                                        id: currentBrick.id,
+                                        type: currentBrick.type || brick.type
+                                    };
+                                }
+                                return brick;
+                            });
+                        });
+                    };
+
+                    set({
+                        breakoutState: {
+                            ...state,
+                            opponentPaddleX: paddleX,
+                            balls: balls ?? state.balls,
+                            // Map Host OPPONENT bricks to Guest PLAYER bricks
+                            playerBricks: mergeBricks(state.playerBricks, opponentBricks),
+                            // Map Host PLAYER bricks to Guest OPPONENT bricks
+                            opponentBricks: mergeBricks(state.opponentBricks, playerBricks),
+
+                            opponentScore: score ?? state.opponentScore,
+                            score: opponentScore ?? state.score,
+                            lives: lives ?? state.lives,
+                            gameState: gameState ?? state.gameState,
+                            isGameOver: isGameOver ?? state.isGameOver,
+                            winner: winner ?? state.winner
+                        }
+                    });
+                }
+            });
+
+            socket.on('request_breakout_init', () => {
+                const { roomCode, breakoutState } = get();
+                // Host (or anyone with the full state) replies
+                if (breakoutState.playerBricks && breakoutState.playerBricks[0] && breakoutState.playerBricks[0][0].x !== undefined) {
+                    console.log('📡 [STORE] Received init request. Resending cached layout...');
+                    socket.emit('breakout_init', {
+                        roomCode,
+                        playerBricks: breakoutState.playerBricks, // Host sends their Bottom
+                        opponentBricks: breakoutState.opponentBricks // Host sends their Top
+                    });
+                }
+            });
         }
 
         // Connect if not already connected
@@ -368,25 +467,37 @@ export const useOnlineGameStore = create((set, get) => ({
     },
 
     leaveRoom: () => {
-        const { roomCode } = get();
-        if (roomCode) {
-            socket.emit('leave_room', roomCode);
+        const { socket, roomCode } = get();
+        if (socket && roomCode) {
+            console.log('🚀 [STORE] Leaving room:', roomCode);
+            socket.emit('leave_room', { roomCode });
+            set({
+                roomCode: null,
+                players: [],
+                isHost: false,
+                gameStarted: false,
+                onlineStarted: false,
+                error: null,
+                breakoutState: {
+                    playerBricks: null,
+                    opponentBricks: null,
+                    balls: [],
+                    score: 0,
+                    opponentScore: 0,
+                    lives: 3,
+                    gameState: 'MENU',
+                    opponentPaddleX: 0.5
+                }
+            });
         }
-        set({
-            roomCode: null,
-            gameState: null,
-            activeState: null,
-            gameStarted: false,
-            onlineStarted: false,
-            isGameOver: false,
-            gameWinner: null,
-            players: [],
-            roundNumber: 1
-        });
     },
 
     setPlayerInfo: (name, emoji) => {
         set({ playerName: name, playerEmoji: emoji });
+    },
+
+    setLastNotification: (notif) => {
+        set({ lastNotification: notif });
     },
 
     createRoom: (isPublic = true, autoInviteFriendId = null) => {
@@ -453,24 +564,6 @@ export const useOnlineGameStore = create((set, get) => ({
         set({ roomCode: code });
     },
 
-    leaveRoom: () => {
-        const { roomCode } = get();
-        if (roomCode) {
-            console.log('[Store] Leaving room:', roomCode);
-            socket.emit('leave_room', roomCode);
-        }
-        set({
-            gameStarted: false,
-            gameState: null,
-            roomCode: null,
-            players: [],
-            isHost: false,
-            onlineStarted: false,
-            activeState: null,
-            error: null
-        });
-    },
-
 
     startGame: () => {
         const { roomCode } = get();
@@ -511,6 +604,46 @@ export const useOnlineGameStore = create((set, get) => ({
     // UI Helpers
     selectCard: (index) => set({ selectedCardIndex: index }),
     clearError: () => set({ error: null }),
+
+    // Breakout Actions
+    initOnlineBreakout: (playerBricks, opponentBricks) => {
+        const { socket, roomCode } = get();
+        if (socket && roomCode) {
+            console.log('📡 [STORE] Initializing Online Breakout Layout for room:', roomCode);
+            // Cache full layout locally so we can resend it if requested
+            set(state => ({
+                breakoutState: {
+                    ...state.breakoutState,
+                    playerBricks,
+                    opponentBricks
+                }
+            }));
+            socket.emit('breakout_init', { roomCode, playerBricks, opponentBricks });
+        }
+    },
+
+    requestBreakoutInit: () => {
+        const { socket, roomCode } = get();
+        if (socket && roomCode) {
+            console.log('📡 [STORE] Sending request_breakout_init...');
+            socket.emit('request_breakout_init', { roomCode });
+        }
+    },
+
+    syncBreakoutState: (state) => {
+        const { socket, roomCode } = get();
+        if (socket && roomCode) {
+            // Flatten state into the main object to match listener expectations
+            socket.emit('breakout_sync', { roomCode, ...state });
+            // Update local state
+            set(prevState => ({
+                breakoutState: {
+                    ...prevState.breakoutState,
+                    ...state
+                }
+            }));
+        }
+    },
 
     startRedirection: (reason) => {
         set({ redirectionState: { active: true, timer: 5, reason } });

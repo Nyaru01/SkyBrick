@@ -83,7 +83,7 @@ export default function ChatPopup({ friend, onClose }) {
                     <div>
                         <h4 className="font-black text-white text-sm">{friend.name}</h4>
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
-                            {isTyping ? <span className="text-skyjo-blue animate-pulse">En train d'écrire...</span> : (friend.isOnline ? 'En ligne' : 'Hors ligne')}
+                            {isTyping ? <span className="text-cyan-400 animate-pulse">En train d'écrire...</span> : (friend.isOnline ? 'En ligne' : 'Hors ligne')}
                         </p>
                     </div>
                 </div>
@@ -120,7 +120,7 @@ export default function ChatPopup({ friend, onClose }) {
                             <div className={cn(
                                 "px-4 py-2.5 rounded-2xl text-sm font-medium shadow-lg",
                                 m.isMe
-                                    ? "bg-skyjo-blue text-white rounded-tr-none"
+                                    ? "bg-cyan-500 text-white rounded-tr-none"
                                     : "bg-slate-800 text-slate-200 rounded-tl-none border border-white/5"
                             )}>
                                 {m.text}
@@ -151,16 +151,16 @@ export default function ChatPopup({ friend, onClose }) {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Écrivez un message..."
-                    className="flex-1 bg-slate-800/50 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-skyjo-blue/30 transition-all"
+                    placeholder="Tapez un message..."
+                    className="flex-1 bg-slate-800/50 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all"
                 />
-                <Button
-                    type="submit"
+                <button
+                    onClick={handleSend}
                     disabled={!message.trim()}
-                    className="w-12 h-12 p-0 rounded-2xl bg-skyjo-blue hover:bg-skyjo-blue/80 text-white shadow-lg shadow-skyjo-blue/20 flex items-center justify-center shrink-0 active:scale-90 transition-all"
+                    className="w-12 h-12 p-0 rounded-2xl bg-cyan-500 hover:bg-cyan-600 text-white shadow-lg shadow-cyan-500/20 flex items-center justify-center shrink-0 active:scale-90 transition-all"
                 >
                     <Send className="w-5 h-5 ml-0.5" />
-                </Button>
+                </button>
             </form>
         </motion.div>
     );

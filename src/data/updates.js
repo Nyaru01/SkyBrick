@@ -1,18 +1,34 @@
 export const UPDATES = [
     {
+        id: 14,
+        version: '1.2.0',
+        date: '1 Fév. 2026',
+        title: 'Refonte Mode Versus & IA',
+        description: 'Une révision majeure du gameplay pour garantir l\'équité et le fun.',
+        isNew: true,
+        type: "major",
+        changes: [
+            { type: 'improve', text: 'Gameplay : 4 rangées standardisées & Physique équilibrée' },
+            { type: 'feat', text: 'Interface : Nouveau bouton Pause & Guide intégré' },
+            { type: 'fix', text: 'Fix : Sync Multi-balle & Crash Bonus corrigés' },
+            { type: 'improve', text: 'Visuel : Marges optimisées pour max d\'espace' }
+        ],
+        image: "/premium-bg.jpg"
+    },
+    {
         id: 13,
-        version: "2.1.0",
-        date: "29 Janv. 2026",
+        version: "1.0.1",
+        date: "1 Fév. 2026",
         title: "Raffinement UI & Gameplay",
-        description: "Optimisation de l'interface de jeu et du confort visuel.",
+        description: "Optimisation de l'interface de jeu et du confort visuel pour SkyBrick.",
         isNew: true,
         type: "minor",
         changes: [
             { text: "Interface de jeu : Nouveau Header unifié 'Pill Design' avec animations Glassmorphism", type: "improve" },
-            { text: "Notifications IA : Suppression des messages intrusifs pendant le tour de l'IA", type: "improve" },
-            { text: "Confort Visuel : Ajustement de la position des badges joueurs et harmonisation des couleurs (#1A4869)", type: "improve" },
-            { text: "Lobby : La musique ne joue plus pendant la phase de préparation", type: "fix" },
-            { text: "Musique : Ajout d'un bouton 'Musique Aléatoire' 🎵", type: "feat" }
+            { text: "Système de Briques : Harmonisation de la physique et des collisions", type: "improve" },
+            { text: "Confort Visuel : Ajustement de la position des badges et harmonisation des couleurs (#1A4869)", type: "improve" },
+            { text: "Lobby : Optimisation de l'ambiance sonore pendant la phase de préparation", type: "fix" },
+            { text: "Audio : Ajout d'un bouton 'Musique Aléatoire' pour varier l'ambiance 🎵", type: "feat" }
         ],
         image: "/premium-bg.jpg"
     },
@@ -36,8 +52,8 @@ export const UPDATES = [
         id: 11,
         version: "2.0.0",
         date: "28 Janv. 2026",
-        title: "Skyjo V2 : Le Grand Lancement",
-        description: "L'expérience Skyjo ultime est là. Mode social, persistance Cloud et design ultra-premium.",
+        title: "SkyBrick V2 : Le Grand Lancement",
+        description: "L'expérience SkyBrick ultime est là. Mode social, persistance Cloud et design ultra-premium.",
         isNew: false,
         type: "major",
         changes: [

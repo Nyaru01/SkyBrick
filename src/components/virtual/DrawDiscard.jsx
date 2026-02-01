@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SkyjoCard from './SkyjoCard';
+import SkyBrickCard from './SkyBrickCard';
 import { cn } from '../../lib/utils';
 
 /**
@@ -119,7 +119,7 @@ const DrawDiscard = memo(function DrawDiscard({
                     >
                         <div className="relative">
                             <div className="absolute inset-0 bg-amber-400/30 rounded-xl blur-md" />
-                            <SkyjoCard
+                            <SkyBrickCard
                                 card={drawnCard}
                                 size="md"
                                 isHighlighted
@@ -171,7 +171,7 @@ const DrawDiscard = memo(function DrawDiscard({
                                     canDiscardDrawn && "ring-2 ring-orange-400 animate-pulse"
                                 )}
                             >
-                                <SkyjoCard card={discardTop} size="md" />
+                                <SkyBrickCard card={discardTop} size="md" />
                             </motion.div>
                         </div>
                     ) : (

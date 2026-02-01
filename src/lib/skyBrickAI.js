@@ -1,5 +1,5 @@
 /**
- * Skyjo AI Engine
+ * SkyBrick AI Engine
  * Contains decision logic for AI players with 3 difficulty levels
  */
 
@@ -360,7 +360,7 @@ export const decideCardAction = (gameState, difficulty = AI_DIFFICULTY.NORMAL) =
                 .map(i => hand[i].value);
 
             // Hardcore Logic:
-            // - If column has 2 identical revealed cards: +20 (Try for Skyjo)
+            // - If column has 2 identical revealed cards: +20 (Try for SkyBrick)
             // - If column has 1 revealed card: +5 (Start building)
             // - If column has 0 revealed cards: +1 (Explore)
 

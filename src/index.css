@@ -48,8 +48,8 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  /* Skyjo Image Background */
-  background: url('/bg-skyjo.png');
+  /* SkyBrick Image Background */
+  background: url('/bg-skybrick.png');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -58,12 +58,16 @@ body {
   background-blend-mode: overlay;
 }
 
+.skybrick-primary {
+  color: #a5b4fc;
+}
+
 /* Overlay sombre sur le background avec blur */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: 
+  background:
     linear-gradient(rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.92)),
     url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%230ea5e9' fill-opacity='0.03' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
   backdrop-filter: blur(8px);
@@ -77,15 +81,11 @@ body::after {
   content: "";
   position: fixed;
   inset: 0;
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.05) 50%
-  ), linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.02),
-    rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.02)
-  );
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.05) 50%), linear-gradient(90deg,
+      rgba(255, 0, 0, 0.02),
+      rgba(0, 255, 0, 0.01),
+      rgba(0, 0, 255, 0.02));
   background-size: 100% 4px, 3px 100%;
   pointer-events: none;
   z-index: 100;
@@ -684,14 +684,14 @@ body,
 
 /* Scale down the game layout on small viewport heights */
 @media (max-height: 750px) {
-  .skyjo-game-container {
+  .skybrick-game-container {
     transform: scale(0.92);
     transform-origin: center top;
   }
 }
 
 @media (max-height: 650px) {
-  .skyjo-game-container {
+  .skybrick-game-container {
     transform: scale(0.85);
     transform-origin: center top;
   }

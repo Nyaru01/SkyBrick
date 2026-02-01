@@ -32,8 +32,8 @@ export default defineConfig({
       manifest: {
         name: 'SkyBrick - Modern Breakout',
         short_name: 'SkyBrick',
-        description: 'L\'expérience de Casse-Brique moderne et sociale',
-        version: '2.2.0',
+        description: 'L\'expérience de Casse-Briques moderne et sociale. Détruisez les briques, collectez des bonus et affrontez vos amis.',
+        version: '1.0.1',
         theme_color: '#00f2ff',
         background_color: '#0f172a',
         display: 'standalone',
@@ -58,11 +58,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true
       },
       '/socket.io': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         ws: true,
         changeOrigin: true
       }

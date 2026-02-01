@@ -38,7 +38,7 @@ const LoaderText = () => {
     );
 };
 
-export default function SkyjoLoader({ progress = 0 }) {
+export default function SkyBrickLoader({ progress = 0 }) {
     return (
         <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center z-[100]">
             {/* Background Image with Cinematic Zoom - Darker overlay */}
@@ -63,7 +63,7 @@ export default function SkyjoLoader({ progress = 0 }) {
                     className="mb-12 flex flex-col items-center"
                 >
                     <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#9E67F2] to-[#748EF8] drop-shadow-[0_0_15px_rgba(158,103,242,0.5)] tracking-tighter">
-                        SKYJO
+                        SKYBRICK
                     </h1>
                     <div className="h-1 w-24 bg-gradient-to-r from-[#9E67F2] to-[#748EF8] rounded-full mt-2 shadow-[0_0_10px_rgba(158,103,242,0.8)]" />
                 </motion.div>

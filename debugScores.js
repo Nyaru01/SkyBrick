@@ -1,5 +1,5 @@
 
-import { calculateFinalScores } from './src/lib/skyjoEngine.js';
+import { calculateFinalScores } from './src/lib/skyBrickEngine.js';
 
 const mockGameState = {
     players: [

@@ -8,7 +8,7 @@ export default function Changelog() {
     return (
         <div className="space-y-6 pb-20">
             <div className="flex items-center gap-3 px-2">
-                <div className="w-10 h-10 rounded-xl bg-skyjo-blue flex items-center justify-center shadow-lg shadow-skyjo-blue/20">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
                     <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -27,20 +27,20 @@ export default function Changelog() {
                         className="relative pl-12"
                     >
                         {/* Timeline Dot */}
-                        <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-slate-900 flex items-center justify-center shadow-xl transition-all duration-500 ${update.isNew ? 'bg-skyjo-blue scale-110 shadow-skyjo-blue/30' : 'bg-slate-800'}`}>
+                        <div className={`absolute left-0 top-1 w-10 h-10 rounded-full border-4 border-slate-900 flex items-center justify-center shadow-xl transition-all duration-500 ${update.isNew ? 'bg-cyan-500 scale-110 shadow-cyan-500/30' : 'bg-slate-800'}`}>
                             {update.isNew ? <Zap className="w-5 h-5 text-white animate-pulse" /> : <Calendar className="w-4 h-4 text-slate-500" />}
                         </div>
 
-                        <Card className={`glass-premium transition-all duration-300 ${update.isNew ? 'border-skyjo-blue/30 shadow-lg shadow-skyjo-blue/10 bg-skyjo-blue/[0.03]' : 'border-white/5 opacity-80'}`}>
+                        <Card className={`glass-premium transition-all duration-300 ${update.isNew ? 'border-cyan-500/30 shadow-lg shadow-cyan-500/10 bg-cyan-500/[0.03]' : 'border-white/5 opacity-80'}`}>
                             <CardContent className="p-5">
                                 <div className="flex items-center justify-between mb-4">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full tracking-wider ${update.isNew ? 'bg-skyjo-blue text-white' : 'bg-white/10 text-slate-400'}`}>
-                                                v{update.version}
+                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full tracking-wider ${update.isNew ? 'bg-cyan-500 text-white' : 'bg-white/10 text-slate-400'}`}>
+                                                {update.isNew ? 'NOUVEAU' : 'ARCHIVE'}
                                             </span>
                                             {update.isNew && (
-                                                <span className="flex h-2 w-2 rounded-full bg-skyjo-blue animate-ping" />
+                                                <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
                                             )}
                                         </div>
                                         <h3 className="text-lg font-black text-white">{update.title}</h3>
@@ -59,7 +59,7 @@ export default function Changelog() {
                                         <div key={cIdx} className="flex gap-3 items-start group">
                                             <div className="mt-1">
                                                 {change.type === 'feat' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
-                                                {change.type === 'improve' && <Info className="w-3.5 h-3.5 text-skyjo-blue" />}
+                                                {change.type === 'improve' && <Info className="w-3.5 h-3.5 text-cyan-400" />}
                                                 {change.type === 'fix' && <AlertCircle className="w-3.5 h-3.5 text-amber-500" />}
                                             </div>
                                             <p className="text-sm text-slate-300 group-hover:text-white transition-colors">

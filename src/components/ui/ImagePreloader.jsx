@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import SkyjoLoader from '../SkyjoLoader';
+import SkyBrickLoader from '../SkyBrickLoader';
 
 const CRITICAL_IMAGES = [
     '/card-back.png?v=2',
@@ -11,7 +11,7 @@ const CRITICAL_IMAGES = [
     '/card-back-gold.png',
     '/card-back-galaxy.png',
     '/card-snow.png',
-    '/bg-skyjo.png',
+    '/bg-skybrick.png',
     '/premium-bg.jpg',
     '/virtual-logo.jpg',
     '/logo.jpg',
@@ -100,7 +100,7 @@ export default function ImagePreloader({ children }) {
         <>
             {isLoading && (
                 <div className="fixed inset-0 z-[9999]">
-                    <SkyjoLoader progress={displayProgress} />
+                    <SkyBrickLoader progress={displayProgress} />
                 </div>
             )}
             <div

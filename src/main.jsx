@@ -6,7 +6,7 @@ import App from './App.jsx'
 // Force dark mode always (app has dark background)
 document.documentElement.classList.add('dark');
 
-console.log('%c☁️ SKYJO SCORE V2.0.5 ☁️', 'background: #0f172a; color: #a5b4fc; font-weight: bold; padding: 4px 8px; border-radius: 4px;');
+console.log('%c☁️ SKYBRICK V1.0.1 ☁️', 'background: #0f172a; color: #a5b4fc; font-weight: bold; padding: 4px 8px; border-radius: 4px;');
 
 // --- PWA HELPER LOGIC ---
 function isInsidePWA() {

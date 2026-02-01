@@ -1,6 +1,6 @@
 /**
- * Skyjo Game Engine
- * Contains all game logic for the virtual Skyjo card game
+ * SkyBrick Game Engine
+ * Contains all game logic for the virtual SkyBrick card game
  */
 
 // Card distribution according to official rules (150 cards total)
@@ -44,7 +44,7 @@ export const createCard = (value, id) => ({
 });
 
 /**
- * Create a full Skyjo deck (150 cards)
+ * Create a full SkyBrick deck (150 cards)
  */
 export const createDeck = () => {
     const deck = [];

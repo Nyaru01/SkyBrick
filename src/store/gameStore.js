@@ -44,6 +44,8 @@ export const useGameStore = create(
             migratedToV2: false, // Flag for LocalStorage -> DB migration
             cardSkin: 'classic', // classic, papyrus
             currentTheme: 'CYBERPUNK', // CYBERPUNK, ZEN_GARDEN, RETRO_ARCADE
+            unlockedThemes: ['CYBERPUNK'], // Added for progression
+            totalWins: 0, // Added for progression
             isFeedbackOpen: false, // Global feedback status
             isAdminOpen: false, // Global admin status
             adminAuthToken: null, // Admin session token
@@ -94,6 +96,52 @@ export const useGameStore = create(
             setIsAdminOpen: (open) => set({ isAdminOpen: open }),
 
             setAdminAuthToken: (token) => set({ adminAuthToken: token }),
+
+            unlockTheme: (themeId) => set(state => {
+                if (state.unlockedThemes.includes(themeId)) return state;
+                return { unlockedThemes: [...state.unlockedThemes, themeId] };
+            }),
+
+            unlockAchievement: (achievementId) => set(state => {
+                if (state.achievements.some(a => a.id === achievementId)) return state;
+                const achievementMap = {
+                    'FIRST_BYTE': { id: 'FIRST_BYTE', title: 'Premier Octet', description: 'Gagne ta première partie !', icon: '🏆' },
+                    'BOSS_HUNTER': { id: 'BOSS_HUNTER', title: 'Chasseur de Boss', description: 'Vaincs le Boss Core.', icon: '👹' },
+                    'ZEN_MASTER': { id: 'ZEN_MASTER', title: 'Maître Zen', description: 'Termine une session de méditation.', icon: '🧘' },
+                    'UNTOUCHABLE': { id: 'UNTOUCHABLE', title: 'Intouchable', description: 'Gagne sans perdre de vie.', icon: '🛡️' }
+                };
+                const ach = achievementMap[achievementId];
+                if (!ach) return state;
+                return { achievements: [...state.achievements, { ...ach, timestamp: Date.now() }] };
+            }),
+
+            addWin: (wasBossDefeated = false) => set(state => {
+                const newWins = state.totalWins + 1;
+                let newUnlocked = [...state.unlockedThemes];
+                let newAchievements = [...state.achievements];
+
+                // Theme Unlock logic
+                if (newWins >= 1 && !newUnlocked.includes('ZEN_GARDEN')) {
+                    newUnlocked.push('ZEN_GARDEN');
+                }
+                if (newWins >= 3 && !newUnlocked.includes('RETRO_ARCADE')) {
+                    newUnlocked.push('RETRO_ARCADE');
+                }
+
+                // Achievement Unlock logic
+                if (newWins === 1 && !newAchievements.some(a => a.id === 'FIRST_BYTE')) {
+                    newAchievements.push({ id: 'FIRST_BYTE', title: 'Premier Octet', description: 'Gagne ta première partie !', icon: '🏆', timestamp: Date.now() });
+                }
+                if (wasBossDefeated && !newAchievements.some(a => a.id === 'BOSS_HUNTER')) {
+                    newAchievements.push({ id: 'BOSS_HUNTER', title: 'Chasseur de Boss', description: 'Vaincs le Boss Core.', icon: '👹', timestamp: Date.now() });
+                }
+
+                return {
+                    totalWins: newWins,
+                    unlockedThemes: newUnlocked,
+                    achievements: newAchievements
+                };
+            }),
 
             // XP & Level System
             // Note: We'll keep these values in parallel with userProfile for backward compatibility 
@@ -169,13 +217,25 @@ export const useGameStore = create(
 
                 if (newXP >= 10) {
                     // Level up!
+                    const newLevel = level + 1;
+                    let extraUnlocked = {};
+
+                    // Reward logic
+                    if (newLevel === 2) {
+                        extraUnlocked = { hasRoyalSkin: true };
+                    }
+                    if (newLevel === 5) {
+                        extraUnlocked = { unlockedAvatars: [...(userProfile.unlockedAvatars || []), 'cyber_king'] };
+                    }
+
                     set(state => ({
                         currentXP: newXP - 10,
-                        level: level + 1,
+                        level: newLevel,
                         userProfile: {
                             ...state.userProfile,
-                            level: level + 1,
-                            currentXP: newXP - 10
+                            level: newLevel,
+                            currentXP: newXP - 10,
+                            ...extraUnlocked
                         }
                     }));
                 } else {
@@ -444,8 +504,31 @@ export const useGameStore = create(
             }
         }),
         {
-            name: 'skyjo-storage',
+            name: 'skybrick-storage',
             version: 4,
+            onRehydrateStorage: () => (state) => {
+                // Check if we need to migrate from old skyjo-storage (legacy)
+                if (state && !state.hasMigratedBranding) {
+                    const oldData = localStorage.getItem('skyjo-storage');
+                    if (oldData) {
+                        try {
+                            const parsed = JSON.parse(oldData);
+                            if (parsed.state) {
+                                console.log('[BRANDING] Migrating data from Skyjo to SkyBrick...');
+                                // Merge old state into current state
+                                Object.assign(state, {
+                                    ...parsed.state,
+                                    hasMigratedBranding: true
+                                });
+                                // Keep old data for safety but mark as done
+                                localStorage.setItem('skybrick-branding-migrated', 'true');
+                            }
+                        } catch (e) {
+                            console.error('[BRANDING] Migration failed:', e);
+                        }
+                    }
+                }
+            },
             migrate: (persistedState, version) => {
                 // Ensure usedProfile exists and has an ID during migration
                 if (!persistedState.userProfile || !persistedState.userProfile.id) {

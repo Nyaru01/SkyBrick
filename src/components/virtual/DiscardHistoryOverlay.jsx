@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SkyjoCard from './SkyjoCard';
+import SkyBrickCard from './SkyBrickCard';
 
 /**
  * DiscardHistoryOverlay
@@ -101,7 +101,7 @@ const DiscardHistoryOverlay = memo(function DiscardHistoryOverlay({
                                                 transformOrigin: 'center bottom',
                                             }}
                                         >
-                                            <SkyjoCard
+                                            <SkyBrickCard
                                                 card={{ ...card, isRevealed: true }}
                                                 size="lg"
                                                 isClickable={false}

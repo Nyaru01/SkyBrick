@@ -35,24 +35,25 @@ export default function BottomNav({ activeTab, onTabChange }) {
                             onClick={() => !isDisabled && onTabChange(tab.id)}
                             className={cn(
                                 "relative flex-1 flex flex-col items-center justify-center h-full space-y-0.5 transition-all duration-300 active:scale-95",
-                                isActive ? "text-skyjo-blue dark:text-blue-400" : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300",
+                                isActive ? "text-cyan-400 dark:text-cyan-400" : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300",
                                 isDisabled && "opacity-40 cursor-not-allowed"
                             )}
                         >
-                            {/* Indicateur supérieur */}
-                            {isActive && (
-                                <span className="absolute top-0 w-8 h-1 bg-gradient-to-r from-skyjo-blue to-sky-500 rounded-b-lg shadow-[0_0_10px_rgba(26,72,105,0.4)]" />
-                            )}
-                            <Icon
-                                className={cn(
-                                    "h-5 w-5 transition-all duration-300 relative z-10",
-                                    isActive && "stroke-skyjo-blue dark:stroke-blue-400 drop-shadow-sm"
+                            <div className="relative">
+                                {isActive && (
+                                    <motion.span
+                                        layoutId="nav-active"
+                                        className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-b-lg shadow-[0_0_10px_rgba(34,211,238,0.4)]"
+                                    />
                                 )}
-                                strokeWidth={isActive ? 2.5 : 2}
-                            />
+                                <Icon className={cn(
+                                    "w-6 h-6 transition-all duration-300",
+                                    isActive && "stroke-cyan-400 dark:stroke-cyan-400 drop-shadow-sm"
+                                )} />
+                            </div>
                             <span className={cn(
-                                "text-[9px] font-bold tracking-wide transition-colors relative z-10",
-                                isActive ? "text-skyjo-blue dark:text-blue-400" : "text-slate-400 dark:text-slate-500"
+                                "text-[10px] font-black tracking-tighter transition-all duration-300",
+                                isActive ? "text-cyan-400 dark:text-cyan-400" : "text-slate-400 dark:text-slate-500"
                             )}>
                                 {tab.label.toUpperCase()}
                             </span>

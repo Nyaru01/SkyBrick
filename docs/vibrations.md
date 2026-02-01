@@ -1,4 +1,5 @@
 # Vibrations dans Skyjo Score
+# Vibrations dans SkyBrick Score
 
 ## Support
 
@@ -7,7 +8,7 @@
 
 ## Implémentation
 
-Skyjo utilise l'API standard `Navigator.vibrate()` pour le retour haptique.
+SkyBrick utilise l'API standard `Navigator.vibrate()` pour le retour haptique.
 
 ### Usage de base
 

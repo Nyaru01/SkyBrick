@@ -88,7 +88,7 @@ export function FeedbackModal({ isOpen, onClose, username }) {
                     <div className="flex items-center justify-between relative z-10">
                         <div>
                             <h2 className="text-3xl font-black text-white tracking-tight">Feedback</h2>
-                            <p className="text-white/50 text-sm mt-1 font-medium tracking-wide">Aide-nous à rendre SkyJo légendaire</p>
+                            <p className="text-white/50 text-sm mt-1 font-medium tracking-wide">Aide-nous à rendre SkyBrick légendaire</p>
                         </div>
                         <button
                             onClick={onClose}

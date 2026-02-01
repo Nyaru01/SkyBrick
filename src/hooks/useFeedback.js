@@ -345,6 +345,17 @@ export const useFeedback = () => {
         vibrate([40, 30, 40]);
     }, [soundEnabled, vibrate]);
 
+    // Achievement unlocked sound - triumphant melody
+    const playAchievement = useCallback(() => {
+        if (soundEnabled) {
+            playBeep(523.25, 100, 0.1); // C5
+            setTimeout(() => playBeep(659.25, 100, 0.1), 100); // E5
+            setTimeout(() => playBeep(783.99, 100, 0.1), 200); // G5
+            setTimeout(() => playBeep(1046.50, 250, 0.15), 300); // C6
+        }
+        vibrate([100, 50, 100, 50, 200]);
+    }, [soundEnabled, vibrate]);
+
     return {
         playSuccess,
         playClick,
@@ -357,6 +368,7 @@ export const useFeedback = () => {
         playCardPlace,
         playSocialNotify,
         playSocialInvite,
+        playAchievement,
         vibrate: (pattern) => {
             if (vibrationEnabled && navigator.vibrate) {
                 navigator.vibrate(pattern);

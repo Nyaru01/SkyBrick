@@ -131,7 +131,7 @@ export function UpdateProvider({ children }) {
                                         Mise à jour disponible
                                     </h3>
                                     <p className="text-slate-400 text-xs">
-                                        Une nouvelle version de Skyjo est prête à être installée.
+                                        Une nouvelle version de SkyBrick est prête à être installée.
                                     </p>
                                 </div>
 

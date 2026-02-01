@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SkyjoCard from './SkyjoCard';
+import SkyBrickCard from './SkyBrickCard';
 import { cn } from '../../lib/utils';
 
 // Simple haptic feedback function
@@ -100,7 +100,7 @@ const DrawDiscardPopup = memo(function DrawDiscardPopup({
                                     {/* Main drawn card */}
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-amber-400/30 rounded-xl blur-md" />
-                                        <SkyjoCard card={drawnCard} size="lg" isHighlighted />
+                                        <SkyBrickCard card={drawnCard} size="lg" isHighlighted />
                                     </div>
 
 
@@ -209,7 +209,7 @@ const DrawDiscardPopup = memo(function DrawDiscardPopup({
                                                     "rounded-xl",
                                                     canTakeDiscard && "ring-2 ring-blue-400 shadow-xl"
                                                 )}>
-                                                    <SkyjoCard card={discardTop} size="lg" />
+                                                    <SkyBrickCard card={discardTop} size="lg" />
                                                 </div>
                                             ) : (
                                                 <div

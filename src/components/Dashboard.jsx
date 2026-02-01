@@ -24,6 +24,7 @@ import Tutorial from './Tutorial';
 import LevelUpCelebration from './LevelUpCelebration';
 import Changelog from './Changelog';
 import GameMenu from './GameMenu';
+import SkyBrickLoader from './SkyBrickLoader';
 import { useBackgroundMusic } from '../hooks/useBackgroundMusic';
 import { useSocialStore } from '../store/socialStore';
 import { FeedbackModal } from './FeedbackModal';
@@ -99,11 +100,15 @@ export default function Dashboard() {
     const [isBreakoutPlaying, setIsBreakoutPlaying] = useState(false);
     const [isTutorialOpen, setIsTutorialOpen] = useState(false);
 
+    // Auto-fetch friends on mount
+    useEffect(() => {
+        fetchFriends();
+    }, [fetchFriends]);
+
     // 🔥 LOGIQUE DE VERROUILLAGE (Fix Plan)
-    // On considère qu'on est en session si on a un code de room
-    const isGameInProgress = !!onlineGameStarted && !!activeState;
-    const isInLobby = !!roomCode && !onlineGameStarted;
-    const isInOnlineSession = isGameInProgress || isInLobby;
+    // On considère qu'on est en session si on a un code de room ou si le jeu en ligne est démarré
+    const isInOnlineSession = !!roomCode || !!onlineGameStarted;
+    const isGameInProgress = !!onlineGameStarted;
 
     // 🔥 Tab effective : force 'virtual' pendant toute la session en ligne ou game local
     const effectiveTab = isInOnlineSession ? 'virtual' : activeTab;
@@ -156,6 +161,25 @@ export default function Dashboard() {
     useEffect(() => {
         if (achievements && achievements.length > 0) {
             playAchievement();
+            // Show toast for the latest achievement
+            const latest = achievements[achievements.length - 1];
+            toast.custom((t) => (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.5, y: 50 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.5, y: 20 }}
+                    className="flex items-center gap-4 bg-slate-900/90 backdrop-blur-xl border border-cyan-500/50 rounded-2xl p-4 shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+                >
+                    <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center text-2xl">
+                        {latest.icon}
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-black text-cyan-400 uppercase tracking-tighter">SUCCÈS DÉBLOQUÉ !</h4>
+                        <p className="text-white font-bold">{latest.title}</p>
+                        <p className="text-[10px] text-cyan-200/50">{latest.description}</p>
+                    </div>
+                </motion.div>
+            ), { duration: 4000 });
         }
     }, [achievements?.length, playAchievement]);
 
@@ -164,13 +188,12 @@ export default function Dashboard() {
         if (isInOnlineSession) {
             console.log('🔍 [DASH] Online Session Active:', {
                 isGameInProgress,
-                isInLobby,
                 roomCode,
                 effectiveTab,
                 activeTab
             });
         }
-    }, [isInOnlineSession, isGameInProgress, isInLobby, roomCode, effectiveTab, activeTab]);
+    }, [isInOnlineSession, isGameInProgress, roomCode, effectiveTab, activeTab]);
 
     // Listen for debug push logs
     useEffect(() => {
@@ -275,7 +298,7 @@ export default function Dashboard() {
                                     </div>
                                     <button
                                         onClick={() => setIsTutorialOpen(true)}
-                                        className="p-2 hover:bg-sky-500/10 rounded-xl transition-colors text-skyjo-blue group"
+                                        className="p-2 hover:bg-sky-500/10 rounded-xl transition-colors text-cyan-400 group"
                                         title="Revoir le tutoriel"
                                     >
                                         <HelpCircle className="h-6 w-6 group-hover:scale-110 transition-transform" />
@@ -290,7 +313,7 @@ export default function Dashboard() {
                                 <div className="grid gap-3">
                                     <Button
                                         onClick={() => setActiveTab('game')}
-                                        className="w-full bg-skyjo-blue hover:bg-skyjo-blue/90 h-14 rounded-2xl font-black text-lg shadow-xl shadow-skyjo-blue/20 transition-all active:scale-95 group"
+                                        className="w-full bg-cyan-500 hover:bg-cyan-600 h-14 rounded-2xl font-black text-lg shadow-xl shadow-cyan-500/20 transition-all active:scale-95 group"
                                     >
                                         <Play className="mr-2 h-6 w-6" />
                                         Reprendre la partie
@@ -352,6 +375,28 @@ export default function Dashboard() {
 
 
             case 'virtual':
+                // Si on est en session en ligne, on force le rendu de VirtualGame (qui gère le lobby et l'arène online)
+                if (isInOnlineSession) {
+                    return (
+                        <motion.div
+                            key="virtual"
+                            variants={pageVariants}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            transition={pageTransition}
+                        >
+                            <VirtualGame
+                                initialScreen={virtualScreen}
+                                onBackToMenu={onlineStarted ? handleQuitOnlineGame : () => {
+                                    setVirtualScreen('breakout');
+                                    setActiveTab('home');
+                                }}
+                            />
+                        </motion.div>
+                    );
+                }
+
                 if (virtualScreen === 'breakout') {
                     return (
                         <motion.div
@@ -363,7 +408,7 @@ export default function Dashboard() {
                             transition={pageTransition}
                         >
                             <VersusBreakout
-                                onBackToMenu={() => setActiveTab('home')}
+                                onBackToMenu={onlineStarted ? handleQuitOnlineGame : () => setActiveTab('home')}
                                 onStartOnline={() => setVirtualScreen('lobby')}
                                 onPlayingStateChange={setIsBreakoutPlaying}
                             />
@@ -381,7 +426,7 @@ export default function Dashboard() {
                     >
                         <VirtualGame
                             initialScreen={virtualScreen}
-                            onBackToMenu={() => {
+                            onBackToMenu={onlineStarted ? handleQuitOnlineGame : () => {
                                 setVirtualScreen('breakout');
                                 setActiveTab('home');
                             }}
@@ -487,19 +532,21 @@ export default function Dashboard() {
                             {/* Header with Stop Game */}
                             <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-white/10 bg-white/30 dark:bg-white/5">
                                 <h2 className="font-bold text-slate-900 dark:text-slate-100 text-lg flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-md animate-float overflow-hidden bg-slate-900 border border-skyjo-blue/30">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-md animate-float overflow-hidden bg-slate-900 border border-cyan-500/30">
                                         <img
-                                            src="/Gemini_Generated_Image_auzhtfauzhtfauzh.png"
-                                            alt="Skyjo Logo"
-                                            className="w-full h-full object-cover scale-110"
+                                            src="/skybrick-logo.png"
+                                            alt="SkyBrick Logo"
+                                            className="w-5 h-5 object-contain"
                                         />
                                     </div>
-                                    Partie en cours
+                                    <h1 className="text-sm font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 tracking-tighter italic">
+                                        SKYBRICK
+                                    </h1>
                                 </h2>
                                 <div className="flex gap-2 items-center">
                                     <button
                                         onClick={() => setIsTutorialOpen(true)}
-                                        className="p-2 text-slate-400 hover:text-skyjo-blue transition-colors"
+                                        className="p-2 text-slate-400 hover:text-cyan-400 transition-colors"
                                         title="Règles du jeu"
                                     >
                                         <HelpCircle className="w-5 h-5" />
@@ -552,11 +599,11 @@ export default function Dashboard() {
                             {/* Embedded Score Input - Always visible for continuous entry */}
                             <div className="p-4">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className="h-px bg-gradient-to-r from-transparent via-skyjo-blue to-transparent flex-1"></div>
-                                    <span className="text-xs font-bold text-skyjo-blue dark:text-blue-400 uppercase tracking-wider bg-sky-100 dark:bg-sky-900/50 px-3 py-1 rounded-full shadow-sm">
+                                    <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent flex-1"></div>
+                                    <span className="text-xs font-bold text-cyan-400 dark:text-cyan-400 uppercase tracking-wider bg-cyan-100 dark:bg-cyan-900/50 px-3 py-1 rounded-full shadow-sm">
                                         Nouvelle Manche {rounds.length + 1}
                                     </span>
-                                    <div className="h-px bg-gradient-to-r from-transparent via-skyjo-blue to-transparent flex-1"></div>
+                                    <div className="h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent flex-1"></div>
                                 </div>
 
                                 <ScoreInput
@@ -621,10 +668,11 @@ export default function Dashboard() {
             <AnimatePresence>
                 {gameInvitation && (
                     <motion.div
+                        key="invitation-banner"
                         initial={{ opacity: 0, y: 50, scale: 0.9, x: '-50%' }}
                         animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
                         exit={{ opacity: 0, scale: 0.8, x: '-50%' }}
-                        className="fixed bottom-24 left-1/2 z-[100] bg-slate-900/90 backdrop-blur-xl border border-skyjo-blue/50 rounded-3xl p-4 shadow-2xl flex items-center gap-4 min-w-[320px] max-w-[90vw]"
+                        className="fixed bottom-24 left-1/2 z-[100] bg-slate-900/90 backdrop-blur-xl border border-cyan-500/50 rounded-3xl p-4 shadow-2xl flex items-center gap-4 min-w-[320px] max-w-[90vw]"
                     >
                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg animate-float shrink-0" style={{ backgroundColor: '#9850E1' }}>
                             <Play className="h-6 w-6 text-white" fill="white" />
@@ -665,6 +713,7 @@ export default function Dashboard() {
             <AnimatePresence>
                 {unreadCount > 0 && activeTab !== 'social' && !activeChatId && (
                     <motion.div
+                        key="chat-notif-banner"
                         initial={{ opacity: 0, y: 100, x: '-50%' }}
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         exit={{ opacity: 0, y: 50, transition: { duration: 0.2 } }}

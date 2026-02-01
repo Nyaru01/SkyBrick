@@ -2,7 +2,7 @@ import { memo, useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import SkyjoCard from './SkyjoCard';
+import SkyBrickCard from './SkyBrickCard';
 import { useGameStore } from '../../store/gameStore';
 import { getCardSkinPath } from '../../lib/skinUtils';
 import DiscardHistoryOverlay from './DiscardHistoryOverlay';
@@ -14,7 +14,7 @@ const triggerHaptic = (duration = 50) => {
     }
 };
 
-// Mosaic color schemes for each card color (same as SkyjoCard)
+// Mosaic color schemes for each card color (same as SkyBrickCard)
 const MOSAIC_COLORS = {
     indigo: {
         primary: '#4338ca',
@@ -209,7 +209,7 @@ const DrawDiscardTrigger = memo(function DrawDiscardTrigger({
                             whileTap={canInteract ? { scale: 0.95 } : undefined}
                             id="drawn-card-slot"
                         >
-                            <SkyjoCard
+                            <SkyBrickCard
                                 card={{ ...drawnCard, isRevealed: true }}
                                 size="md"
                                 isHighlighted={canInteract}

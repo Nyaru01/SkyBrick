@@ -104,11 +104,11 @@ export default function SocialDashboard(props) {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="relative cursor-pointer group" onClick={() => setIsAvatarSelectorOpen(true)}>
-                                <div className="w-16 h-16 rounded-full border-2 border-skyjo-blue/50 overflow-hidden bg-slate-800 shadow-xl shadow-skyjo-blue/20 group-hover:border-skyjo-blue transition-colors">
+                                <div className="w-16 h-16 rounded-full border-2 border-cyan-500/50 overflow-hidden bg-slate-800 shadow-xl shadow-cyan-500/20 group-hover:border-cyan-500 transition-colors">
                                     <img src={getAvatarPath(userProfile.avatarId)} alt="Avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
                                 </div>
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-800 rounded-full border border-skyjo-blue/30 flex items-center justify-center shadow-lg group-hover:bg-skyjo-blue transition-colors">
-                                    <Edit2 className="w-3 h-3 text-skyjo-blue group-hover:text-white" />
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-800 rounded-full border border-cyan-500/30 flex items-center justify-center shadow-lg group-hover:bg-cyan-500 transition-colors">
+                                    <Edit2 className="w-3 h-3 text-cyan-400 group-hover:text-white" />
                                 </div>
                             </div>
                             <div>
@@ -117,7 +117,7 @@ export default function SocialDashboard(props) {
                                         <input
                                             autoFocus
                                             type="text"
-                                            className="bg-white/10 border-none outline-none rounded-lg px-3 py-1 text-sm w-32 text-white focus:ring-1 focus:ring-skyjo-blue"
+                                            className="bg-white/10 border-none outline-none rounded-lg px-3 py-1 text-sm w-32 text-white focus:ring-1 focus:ring-cyan-500"
                                             value={newName}
                                             onChange={(e) => setNewName(e.target.value)}
                                             onBlur={handleUpdateName}
@@ -131,15 +131,15 @@ export default function SocialDashboard(props) {
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2 mt-1.5">
-                                    <div className="flex items-center bg-slate-900/80 border-2 border-skyjo-blue rounded-xl px-3 py-1.5 shadow-[0_0_15px_rgba(56,189,248,0.2)] group/id relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-skyjo-blue/5 group-hover/id:bg-skyjo-blue/10 transition-colors" />
+                                    <div className="flex items-center bg-slate-900/80 border-2 border-cyan-500 rounded-xl px-3 py-1.5 shadow-[0_0_15px_rgba(56,189,248,0.2)] group/id relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-cyan-500/5 group-hover/id:bg-cyan-500/10 transition-colors" />
                                         <span className="relative text-[12px] font-black text-white font-mono tracking-wider">
                                             {userProfile.vibeId}
                                         </span>
                                     </div>
                                     <button
                                         onClick={handleCopyId}
-                                        className="p-2 rounded-xl bg-skyjo-blue/10 border border-skyjo-blue/20 text-skyjo-blue hover:bg-skyjo-blue hover:text-white transition-all active:scale-95 shadow-lg"
+                                        className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all active:scale-95 shadow-lg"
                                         title="Copier mon SkyID"
                                     >
                                         {copySuccess ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
@@ -151,7 +151,7 @@ export default function SocialDashboard(props) {
                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Niveau {useGameStore.getState().level || 1}</p>
                             <div className="w-20 h-1.5 bg-slate-700 rounded-full mt-1 overflow-hidden">
                                 <div
-                                    className="h-full bg-gradient-to-r from-skyjo-blue to-emerald-400"
+                                    className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400"
                                     style={{ width: `${(useGameStore.getState().currentXP || 0) * 10}%` }}
                                 />
                             </div>
@@ -204,14 +204,14 @@ export default function SocialDashboard(props) {
             <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/5">
                 <button
                     onClick={() => { setActiveTab('friends'); playClick(); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'friends' ? 'bg-skyjo-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'friends' ? 'bg-cyan-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     <Users className="w-4 h-4" />
                     Amis
                 </button>
                 <button
                     onClick={() => { setActiveTab('leaderboard'); playClick(); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'leaderboard' ? 'bg-skyjo-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'leaderboard' ? 'bg-cyan-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     <Trophy className="w-4 h-4" />
                     Classement
@@ -230,18 +230,18 @@ export default function SocialDashboard(props) {
                         {/* Search Bar */}
                         <form onSubmit={handleSearch} className="relative group">
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                <Search className="w-5 h-5 text-slate-500 group-focus-within:text-skyjo-blue transition-colors" />
+                                <Search className="w-5 h-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
                             </div>
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Rechercher un SkyID ou un nom..."
-                                className="w-full bg-slate-800/50 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:ring-2 focus:ring-skyjo-blue/30 transition-all backdrop-blur-md"
+                                className="w-full bg-slate-800/50 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all backdrop-blur-md"
                             />
                             {isSearching && (
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                    <Loader2 className="w-5 h-5 animate-spin text-skyjo-blue" />
+                                    <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
                                 </div>
                             )}
                         </form>
@@ -271,7 +271,7 @@ export default function SocialDashboard(props) {
                                                         <p className="text-[10px] text-slate-500 font-medium">@{u.vibe_id.replace('#', '')}</p>
                                                     </div>
                                                 </div>
-                                                <Button size="sm" variant="outline" className="border-skyjo-blue/30 text-skyjo-blue hover:bg-skyjo-blue/10 h-8 rounded-full text-xs font-bold" onClick={() => sendFriendRequest(userProfile.id, u.id)}>
+                                                <Button size="sm" variant="outline" className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 h-8 rounded-full text-xs font-bold" onClick={() => sendFriendRequest(userProfile.id, u.id)}>
                                                     AJOUTER
                                                 </Button>
                                             </div>
@@ -306,7 +306,7 @@ export default function SocialDashboard(props) {
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                         >
-                                            <Card className={`glass-premium border-white/10 p-4 group transition-all duration-300 rounded-[20px] ${f.status === 'PENDING' ? 'opacity-60 grayscale' : 'hover:border-skyjo-blue/30'}`}>
+                                            <Card className={`glass-premium border-white/10 p-4 group transition-all duration-300 rounded-[20px] ${f.status === 'PENDING' ? 'opacity-60 grayscale' : 'hover:border-cyan-500/30'}`}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
                                                         <div className="relative">
@@ -340,7 +340,7 @@ export default function SocialDashboard(props) {
 
                                                     <div className="flex gap-2">
                                                         {f.status === 'PENDING' && f.requester_id !== userProfile.id ? (
-                                                            <Button size="sm" className="bg-skyjo-blue text-white font-black text-[10px] h-8 rounded-full shadow-lg shadow-skyjo-blue/20" onClick={() => {
+                                                            <Button size="sm" className="bg-cyan-500 text-white font-black text-[10px] h-8 rounded-full shadow-lg shadow-cyan-500/20" onClick={() => {
                                                                 acceptFriendRequest(userProfile.id, f.id);
                                                                 playSocialNotify();
                                                             }}>
@@ -373,7 +373,7 @@ export default function SocialDashboard(props) {
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="sm"
-                                                                            className="h-10 w-10 p-0 text-skyjo-blue hover:bg-skyjo-blue/10 bg-skyjo-blue/5 rounded-full"
+                                                                            className="h-10 w-10 p-0 text-cyan-400 hover:bg-cyan-500/10 bg-cyan-500/5 rounded-full"
                                                                             onClick={() => {
                                                                                 const onlineRoomCode = useOnlineGameStore.getState().roomCode;
                                                                                 if (onlineRoomCode) {

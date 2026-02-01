@@ -110,7 +110,7 @@ function PastGameDetail({ game, onBack }) {
 
             {/* Game Info Card */}
             <Card className="glass-premium dark:glass-dark shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-br from-skyjo-blue via-sky-600 to-skyjo-blue p-6 text-white">
+                <div className="bg-gradient-to-br from-cyan-500 via-blue-600 to-cyan-500 p-6 text-white">
                     <div className="flex items-center gap-2 text-sky-100 text-sm mb-2">
                         <Calendar className="h-4 w-4" />
                         {formatDate(game.date)}
@@ -160,7 +160,7 @@ function PastGameDetail({ game, onBack }) {
                                     <div className="flex items-center gap-3">
                                         <span className={cn(
                                             "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                                            index === 0 ? "bg-skyjo-blue text-white" :
+                                            index === 0 ? "bg-cyan-500 text-white" :
                                                 index === 1 ? "bg-slate-400 text-white" :
                                                     index === 2 ? "bg-amber-500 text-white" :
                                                         "bg-slate-200 text-slate-600"
@@ -214,7 +214,7 @@ export default function GameHistory() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `skyjo-parties-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `skybrick-parties-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -285,7 +285,7 @@ export default function GameHistory() {
                     variant="ghost"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-slate-500 hover:text-skyjo-blue dark:text-slate-400 dark:hover:text-blue-400"
+                    className="text-slate-500 hover:text-cyan-400 dark:text-slate-400 dark:hover:text-blue-400"
                     title="Importer"
                 >
                     <Upload className="h-4 w-4 mr-2" />
@@ -296,7 +296,7 @@ export default function GameHistory() {
                     size="sm"
                     onClick={handleExport}
                     disabled={gameHistory.length === 0}
-                    className="text-slate-500 hover:text-skyjo-blue dark:text-slate-400 dark:hover:text-blue-400 disabled:opacity-30"
+                    className="text-slate-500 hover:text-cyan-400 dark:text-slate-400 dark:hover:text-cyan-400 disabled:opacity-30"
                     title="Exporter"
                 >
                     <Download className="h-4 w-4 mr-2" />
@@ -364,7 +364,7 @@ export default function GameHistory() {
                                                             <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
                                                                 {game.winner.name}
                                                             </span>
-                                                            <span className="font-mono text-skyjo-blue dark:text-blue-400 font-bold">
+                                                            <span className="font-mono text-cyan-400 dark:text-cyan-400 font-bold">
                                                                 {game.winner.score} pts
                                                             </span>
                                                         </div>

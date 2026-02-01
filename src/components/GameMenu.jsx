@@ -35,7 +35,7 @@ export default function GameMenu({
             {/* Header section can be even more minimal */}
             <div className="text-center mb-6 space-y-1">
                 <h2 className="text-3xl font-black text-white tracking-tighter">MODE VIRTUEL</h2>
-                <div className="h-1 w-12 bg-skyjo-blue mx-auto rounded-full" />
+                <div className="h-1 w-12 bg-cyan-500 mx-auto rounded-full" />
             </div>
 
             <ExperienceBar className="mb-6" />
@@ -64,8 +64,8 @@ export default function GameMenu({
                         <h3 className="text-lg font-bold text-white">Jouer en ligne</h3>
                         <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Affrontez vos amis à distance</p>
                     </div>
-                    <div className="p-3 rounded-2xl bg-skyjo-blue/10 border border-skyjo-blue/20">
-                        <Wifi className="h-6 w-6 text-skyjo-blue group-hover:scale-110 transition-transform" />
+                    <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20">
+                        <Wifi className="h-6 w-6 text-cyan-400 group-hover:scale-110 transition-transform" />
                     </div>
                 </button>
 
@@ -130,7 +130,7 @@ export default function GameMenu({
                         <div className="relative p-6 px-8 border-b border-white/5 flex items-center justify-between shrink-0">
                             <div>
                                 <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                                    <span className="text-3xl">📜</span> Règles du Skyjo
+                                    <span className="text-3xl">📜</span> Règles du SkyBrick
                                 </h2>
                                 <p className="text-xs font-medium text-white/40 uppercase tracking-widest mt-1">Manuel de jeu officiel v2.0</p>
                             </div>

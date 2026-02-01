@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RotateCcw, Trophy, X, ShieldAlert, Cpu, Zap, Sparkles, Users, ArrowLeftRight, Layers, Palette } from 'lucide-react';
+import { ArrowLeft, Trophy, Zap, ShieldAlert, RotateCcw, Monitor, Wifi, Globe, Smartphone, Crown, X, Palette, Sparkles, Cpu, Users, Layers, ArrowLeftRight, CreditCard as IDCard, Pause, Play, LogOut } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import ConfirmModal from './ui/ConfirmModal';
 import { useFeedback } from '../hooks/useFeedback';
 import { useGameStore } from '../store/gameStore';
 import { useReactiveAudio } from '../hooks/useReactiveAudio';
+import { useOnlineGameStore } from '../store/onlineGameStore';
 
 import { THEMES } from '../data/themes';
 
@@ -25,22 +26,51 @@ const SPEED_PROFILES = {
 
 const BONUS_CHANCE = 0.15;
 
-export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingStateChange, aiDifficulty = 'NORMAL' }) {
+export default function VersusBreakout({
+    onBackToMenu,
+    onStartOnline,
+    onPlayingStateChange,
+    aiDifficulty = 'NORMAL',
+    isOnline = false,
+    autoStart = false
+}) {
     const canvasRef = useRef(null);
     const requestRef = useRef();
     const soundEnabled = useGameStore(state => state.soundEnabled);
     const { currentTheme, setTheme } = useGameStore();
     const theme = THEMES[currentTheme] || THEMES['CYBERPUNK'];
 
+    // Online Store
+    const isHost = useOnlineGameStore(state => state.isHost);
+    const syncBreakoutState = useOnlineGameStore(state => state.syncBreakoutState);
+    const initOnlineBreakout = useOnlineGameStore(state => state.initOnlineBreakout);
+    const onlineBreakoutState = useOnlineGameStore(state => state.breakoutState);
+    const socketId = useOnlineGameStore(state => state.socketId);
+    const players = useOnlineGameStore(state => state.players);
+    const setLastNotification = useOnlineGameStore(state => state.setLastNotification);
+    const requestBreakoutInit = useOnlineGameStore(state => state.requestBreakoutInit);
+
     // Game State
     const [scorePlayer, setScorePlayer] = useState(0);
     const [scoreAI, setScoreAI] = useState(0);
-    const [gameState, setGameState] = useState('MENU'); // MENU, PLAYING, GAME_OVER, VICTORY
-    const [gameMode, setGameMode] = useState('AI'); // BRICKS, AI, ONLINE
+    const [gameState, setGameState] = useState((isOnline || autoStart) ? 'PLAYING' : 'MENU'); // MENU, PLAYING, GAME_OVER, VICTORY
+    const [gameMode, setGameMode] = useState(isOnline ? 'ONLINE' : 'AI'); // BRICKS, AI, ONLINE
     const [selectedDifficulty, setSelectedDifficulty] = useState('EXPERT');
     const [lives, setLives] = useState(3);
     const [winner, setWinner] = useState(null);
     const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
+    const [isZenMode, setIsZenMode] = useState(false);
+    const [isBossMode, setIsBossMode] = useState(false);
+    const [bossHp, setBossHp] = useState(100);
+    const [showUnlockNotification, setShowUnlockNotification] = useState(null); // { themeId, themeName }
+    const [initialStateReceived, setInitialStateReceived] = useState(!isOnline || isHost);
+
+    // Ref to track state for async timeouts (prevents closure staleness)
+    const isStateReceivedRef = useRef(initialStateReceived);
+    useEffect(() => {
+        isStateReceivedRef.current = initialStateReceived;
+    }, [initialStateReceived]);
 
     // Bonus State
     const [playerBonus, setPlayerBonus] = useState(null); // { type: 'SUPER_BALL' | 'WIDE_PADDLE' | 'MULTI_BALL' }
@@ -50,6 +80,8 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
     const [shieldActive, setShieldActive] = useState(false);
     const [laserActive, setLaserActive] = useState(false);
 
+    const bonusLockRef = useRef(false);
+
     const { playClick, playError, playVictory, playCardPlace, playCardFlip, playCardDraw } = useFeedback();
     const { play: playMusic, stop: stopMusic, getBass } = useReactiveAudio('/Music/stranger-things-124008.mp3', soundEnabled);
 
@@ -57,12 +89,17 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
         if (onPlayingStateChange) {
             onPlayingStateChange(gameState === 'PLAYING');
         }
-        if (gameState === 'PLAYING') {
+
+        // Only start music if playing AND (if online) initial state is received
+        const shouldPlayMusic = gameState === 'PLAYING' && (!isOnline || initialStateReceived);
+
+        if (shouldPlayMusic) {
             playMusic();
         } else {
             stopMusic();
         }
-    }, [gameState, onPlayingStateChange, playMusic, stopMusic]);
+    }, [gameState, initialStateReceived, isOnline, onPlayingStateChange, playMusic, stopMusic]);
+
 
     // Game Objects Refs
     const ballsRef = useRef([{ x: 0, y: 0, dx: 0, dy: 0, speed: SPEED_PROFILES.EXPERT.initial, isSuperCharged: false, isAttached: true }]);
@@ -74,7 +111,7 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
     const particlesRef = useRef([]);
     const shakeRef = useRef(0);
     const bonusTimerRef = useRef(null);
-    const bonusLockRef = useRef(false); // Valid locking mechanis
+    const frameCountRef = useRef(0);
 
     // AI State
     const aiTargetXRef = useRef(0);
@@ -85,6 +122,7 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
     const timeScaleRef = useRef(1.0);
     const projectilesRef = useRef([]);
     const laserTimerRef = useRef(null);
+    const bossRef = useRef({ x: 0, y: 50, width: 200, height: 60, dx: 2, lastAttack: 0 });
 
     // Shockwave Utility
     const createShockwave = (x, y, color) => {
@@ -121,15 +159,81 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
     };
 
     // Initialize Game
+    const createBricks = useCallback((isTop) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return [];
+        if (isBossMode) return [];
+        if (gameMode === 'BRICKS' && !isTop) return [];
+
+        const width = canvas.width;
+        const height = canvas.height;
+        const brickWidth = (width - ((BRICK_COLUMN_COUNT + 1) * BRICK_PADDING)) / BRICK_COLUMN_COUNT;
+
+        const bricks = [];
+        const brickTotalHeight = BRICK_ROW_COUNT * (20 + BRICK_PADDING);
+
+        // Layout Logic:
+        // Solo (BRICKS): Bricks at Top (80), Paddle at Bottom (H-100)
+        // Versus (AI/ONLINE): Bricks at Edges, Paddles "Inside" (guarding bricks)
+        let startY;
+        if (gameMode === 'BRICKS') {
+            startY = 80;
+        } else {
+            // Versus Mode
+            if (isTop) {
+                startY = 20; // AI Bricks at Top (Margin)
+            } else {
+                startY = height - 20 - brickTotalHeight; // Player Bricks at Bottom (Margin)
+            }
+        }
+
+        for (let c = 0; c < BRICK_COLUMN_COUNT; c++) {
+            bricks[c] = [];
+            for (let r = 0; r < BRICK_ROW_COUNT; r++) {
+                const isBonus = Math.random() < BONUS_CHANCE;
+                let bonusType = isBonus ? (['SUPER_BALL', 'WIDE_PADDLE', 'MULTI_BALL', 'BULLET_TIME', 'SHIELD', 'LASER'][Math.floor(Math.random() * 6)]) : null;
+                const isReinforced = isTop ? (r >= BRICK_ROW_COUNT - 2) : (r <= 1);
+                const hits = isTop ? (r === BRICK_ROW_COUNT - 1 ? 3 : (r === BRICK_ROW_COUNT - 2 ? 2 : 1))
+                    : (r === 0 ? 3 : (r === 1 ? 2 : 1));
+
+                let specialType = null;
+                if (!isBonus && !isReinforced && Math.random() < 0.05) specialType = 'EXPLOSIVE';
+                if (!isBonus && !isReinforced && !specialType && Math.random() < 0.02) specialType = 'GOLDEN';
+
+                if (specialType === 'GOLDEN') {
+                    bonusType = 'SUPER_BALL';
+                }
+
+                bricks[c][r] = {
+                    id: `brick-${isTop ? 'top' : 'bottom'}-${c}-${r}`,
+                    x: (c * (brickWidth + BRICK_PADDING)) + BRICK_PADDING,
+                    y: startY + (r * (20 + BRICK_PADDING)),
+                    status: 1,
+                    hitsRemaining: specialType === 'GOLDEN' ? 3 : hits,
+                    maxHits: specialType === 'GOLDEN' ? 3 : hits,
+                    isReinforced: hits > 1,
+                    isBonus: isBonus || specialType === 'GOLDEN',
+                    bonusType,
+                    specialType
+                };
+            }
+        }
+        return bricks;
+    }, [isBossMode, gameMode]);
+
     const initGame = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const width = canvas.width;
         const height = canvas.height;
+        const brickWidth = (width - ((BRICK_COLUMN_COUNT + 1) * BRICK_PADDING)) / BRICK_COLUMN_COUNT;
 
-        playerPaddleRef.current = { x: (width - PADDLE_WIDTH) / 2 };
-        aiPaddleRef.current = { x: (width - PADDLE_WIDTH) / 2 };
+        const initialPaddleWidth = SPEED_PROFILES[selectedDifficulty].paddleWidth || PADDLE_WIDTH;
+        playerPaddleRef.current = { x: (width - initialPaddleWidth) / 2 };
+        aiPaddleRef.current = { x: (width - initialPaddleWidth) / 2 };
+        setPlayerPaddleWidth(initialPaddleWidth);
+        setAiPaddleWidth(initialPaddleWidth);
 
         const profile = SPEED_PROFILES[selectedDifficulty];
         ballsRef.current = [{
@@ -145,73 +249,138 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
             launchBall();
         }
 
-        const brickWidth = (width - ((BRICK_COLUMN_COUNT + 1) * BRICK_PADDING)) / BRICK_COLUMN_COUNT;
 
-        const createBricks = (isTop) => {
-            if (gameMode === 'BRICKS' && !isTop) return []; // No player bricks in solo mode
-            const bricks = [];
-            const brickTotalHeight = BRICK_ROW_COUNT * (20 + BRICK_PADDING);
-            // Increased margin to 80 to avoid edge clipping/menu overlap
-            const startY = isTop ? 80 : height - 80 - brickTotalHeight;
+        if (!isOnline || isHost) {
+            aiBricksRef.current = createBricks(true);
+            playerBricksRef.current = createBricks(false);
 
-            for (let c = 0; c < BRICK_COLUMN_COUNT; c++) {
-                bricks[c] = [];
-                for (let r = 0; r < BRICK_ROW_COUNT; r++) {
-                    const isBonus = Math.random() < BONUS_CHANCE;
-                    // Add SHIELD and LASER to pool
-                    let bonusType = isBonus ? (['SUPER_BALL', 'WIDE_PADDLE', 'MULTI_BALL', 'BULLET_TIME', 'SHIELD', 'LASER'][Math.floor(Math.random() * 6)]) : null;
-                    const isReinforced = isTop ? (r >= BRICK_ROW_COUNT - 2) : (r <= 1);
-                    const hits = isTop ? (r === BRICK_ROW_COUNT - 1 ? 3 : (r === BRICK_ROW_COUNT - 2 ? 2 : 1))
-                        : (r === 0 ? 3 : (r === 1 ? 2 : 1));
+            // Host emits initial setup
+            if (isOnline && isHost) {
+                console.log("📡 [BREAKOUT] Host emitting initial brick layout...");
+                initOnlineBreakout(playerBricksRef.current, aiBricksRef.current);
 
-                    // Special Types
-                    let specialType = null;
-                    if (!isBonus && !isReinforced && Math.random() < 0.05) specialType = 'EXPLOSIVE'; // 5% Explosive
-                    if (!isBonus && !isReinforced && !specialType && Math.random() < 0.02) specialType = 'GOLDEN'; // 2% Golden
-
-                    if (specialType === 'GOLDEN') {
-                        bonusType = 'SUPER_BALL'; // Golden always has good bonus
-                        // hits = 3; // Golden is tough (but let's keep standard hits for now or override?)
-                        // Let's keep variable hits but maybe guarantee min 2?
-                    }
-
-                    bricks[c][r] = {
-                        x: (c * (brickWidth + BRICK_PADDING)) + BRICK_PADDING,
-                        y: startY + (r * (20 + BRICK_PADDING)),
-                        status: 1,
-                        hitsRemaining: specialType === 'GOLDEN' ? 3 : hits, // Golden is tough
-                        maxHits: specialType === 'GOLDEN' ? 3 : hits,
-                        isReinforced: hits > 1,
-                        isBonus: isBonus || specialType === 'GOLDEN',
-                        bonusType,
-                        specialType
-                    };
-                }
+                // Force immediate state sync to ensure guest receives layout
+                setTimeout(() => {
+                    syncBreakoutState({
+                        paddleX: playerPaddleRef.current.x / (width - playerPaddleWidth),
+                        balls: ballsRef.current.map(b => ({ x: b.x / width, y: b.y / height, dx: b.dx / width, dy: b.dy / height })),
+                        playerBricks: playerBricksRef.current.map(col => col.map(b => ({ status: b.status, hits: b.hitsRemaining }))),
+                        opponentBricks: aiBricksRef.current.map(col => col.map(b => ({ status: b.status, hits: b.hitsRemaining }))),
+                        score: 0,
+                        opponentScore: 0,
+                        lives: 3,
+                        gameState: 'PLAYING'
+                    });
+                }, 100);
             }
-            return bricks;
-        };
-
-        aiBricksRef.current = createBricks(true);
-        playerBricksRef.current = createBricks(false);
+        } else {
+            // Guest waits for breakout_init via store sync
+            console.log("⏳ [BREAKOUT] Guest waiting for initial layout from Host...");
+        }
         canvasSizeRef.current = { width, height, brickWidth };
         particlesRef.current = [];
         shockwavesRef.current = [];
 
         setScorePlayer(0);
         setScoreAI(0);
-        setScoreAI(0);
         setPlayerBonus(null);
         setAiBonusAvailable(null);
-        setPlayerPaddleWidth(PADDLE_WIDTH);
-        setAiPaddleWidth(PADDLE_WIDTH);
+        // setPlayerPaddleWidth and setAiPaddleWidth now handled at start of initGame
         if (bonusTimerRef.current) clearTimeout(bonusTimerRef.current);
         if (laserTimerRef.current) clearInterval(laserTimerRef.current);
         setWinner(null);
         setShieldActive(false);
         setLaserActive(false);
+        setIsZenMode(false);
+        setIsBossMode(false);
+        setBossHp(100);
         projectilesRef.current = [];
 
-    }, [gameMode, selectedDifficulty]);
+    }, [selectedDifficulty, gameMode, isBossMode, createBricks, isOnline, isHost, initOnlineBreakout, playerPaddleWidth, syncBreakoutState]);
+
+    // Auto-init for Online/AutoStart
+    const hasInitedRef = useRef(false);
+    useEffect(() => {
+        if ((isOnline || autoStart) && gameState === 'PLAYING' && !hasInitedRef.current) {
+            console.log("🚀 [BREAKOUT] Auto-starting game session...");
+            // Small delay to ensure canvas is ready
+            const timer = setTimeout(() => {
+                initGame();
+                hasInitedRef.current = true;
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [isOnline, autoStart, gameState, initGame]);
+
+    // Guest: Watch for initial bricks from store
+    useEffect(() => {
+        if (isOnline && !isHost && !initialStateReceived && onlineBreakoutState.playerBricks && onlineBreakoutState.opponentBricks) {
+            // Check if it's a "full" brick (has 'x' property) to avoid premature lock release by simplified sync
+            const firstCol = onlineBreakoutState.playerBricks[0];
+            const firstBrick = firstCol ? firstCol[0] : null;
+
+            if (firstBrick && firstBrick.x !== undefined) {
+                console.log("🎯 [BREAKOUT] Guest received FULL initial state! Populating...");
+
+                // Mapping: Store already did the swap, just apply.
+                playerBricksRef.current = onlineBreakoutState.playerBricks;
+                aiBricksRef.current = onlineBreakoutState.opponentBricks;
+
+                setInitialStateReceived(true);
+            } else {
+                console.log("⏳ [BREAKOUT] Guest received data but it's not the full layout yet... waiting.");
+            }
+        }
+    }, [isOnline, isHost, initialStateReceived, onlineBreakoutState.playerBricks, onlineBreakoutState.opponentBricks]);
+
+    // Safety Timeout for Guest - Plan Part 5
+    // Safety Timeout & Polling for Guest
+    useEffect(() => {
+        let pollTimer;
+        let fallbackTimer;
+
+        if (isOnline && !isHost && !initialStateReceived && gameState === 'PLAYING') {
+            console.log("⏳ [GUEST] Waiting for init... Starting polling request.");
+
+            // Poll every 1s
+            const doRequest = () => {
+                console.log("📡 [GUEST] Requesting Initial Layout...");
+                requestBreakoutInit();
+            };
+
+            doRequest();
+            pollTimer = setInterval(doRequest, 1000);
+
+            // Hard fallback after 15s
+            fallbackTimer = setTimeout(() => {
+                // Check Ref to ensure we have the LATEST state (closure safe)
+                // Using initialStateReceived directly as a ref is not provided in the original code.
+                // Assuming initialStateReceived state is the source of truth.
+                if (!initialStateReceived) {
+                    console.error("❌ [GUEST] Timeout: No initial state received after 15s. Generating fallback layout...");
+                    clearInterval(pollTimer);
+
+                    // Fallback: Generate bricks locally
+                    aiBricksRef.current = createBricks(true);
+                    playerBricksRef.current = createBricks(false);
+                    setLastNotification({
+                        type: 'error',
+                        message: 'Synchronisation différée : terrain généré en mode secours.',
+                        timestamp: Date.now()
+                    });
+                    setInitialStateReceived(true);
+                } else {
+                    console.log("✅ [GUEST] State already received, timeout cancelled.");
+                    clearInterval(pollTimer);
+                }
+            }, 15000);
+
+            return () => {
+                clearInterval(pollTimer);
+                clearTimeout(fallbackTimer);
+            };
+        }
+    }, [isOnline, isHost, initialStateReceived, gameState, createBricks, requestBreakoutInit, setLastNotification]);
 
     const launchBall = useCallback(() => {
         ballsRef.current.forEach(ball => {
@@ -319,7 +488,7 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
     };
 
     const updateAI = useCallback(() => {
-        if (gameMode !== 'AI') return; // Only AI in AI mode
+        if (gameMode !== 'AI' || isOnline) return; // Only AI in AI mode
         const ball = ballsRef.current[0]; // AI largely targets first ball
         if (!ball) return;
         const aiPaddle = aiPaddleRef.current;
@@ -346,14 +515,136 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
 
-        const { width, height, brickWidth } = canvasSizeRef.current;
+        // Ensure state captures current dimensions
+        const { width, height } = canvasSizeRef.current;
+
+        // DYNAMIC LAYOUT CALCULATIONS (Responsive)
+        // Recalculate brick positions based on current height to prevent desync
+        const verticalMargin = 30;
+        const brickTotalHeight = BRICK_ROW_COUNT * (20 + BRICK_PADDING);
+        const paddleGap = 15;
+        const brickWidth = (width - ((BRICK_COLUMN_COUNT + 1) * BRICK_PADDING)) / BRICK_COLUMN_COUNT;
+
+        // Update AI Bricks (Top)
+        if (aiBricksRef.current) {
+            aiBricksRef.current.forEach((col, c) => {
+                col.forEach((b, r) => {
+                    b.x = (c * (brickWidth + BRICK_PADDING)) + BRICK_PADDING;
+                    b.y = verticalMargin + (r * (20 + BRICK_PADDING));
+                });
+            });
+        }
+
+        // Update Player Bricks (Bottom)
+        if (playerBricksRef.current) {
+            const startY = height - verticalMargin - brickTotalHeight;
+            playerBricksRef.current.forEach((col, c) => {
+                col.forEach((b, r) => {
+                    b.x = (c * (brickWidth + BRICK_PADDING)) + BRICK_PADDING;
+                    b.y = startY + (r * (20 + BRICK_PADDING));
+                });
+            });
+        }
+
+        // --- ONLINE SYNC ---
+        if (isOnline) {
+            if (isHost) {
+                // ... existing host sync logic
+                if (onlineBreakoutState.opponentPaddleX !== undefined) {
+                    aiPaddleRef.current.x = (1 - onlineBreakoutState.opponentPaddleX) * (width - aiPaddleWidth);
+                }
+
+                frameCountRef.current++;
+                if (frameCountRef.current % 3 === 0) {
+                    syncBreakoutState({
+                        paddleX: playerPaddleRef.current.x / (width - playerPaddleWidth),
+                        balls: ballsRef.current.map(b => ({ x: b.x / width, y: b.y / height, dx: b.dx / width, dy: b.dy / height })),
+                        playerBricks: playerBricksRef.current.map(col => col.map(b => ({ status: b.status, hits: b.hitsRemaining }))),
+                        opponentBricks: aiBricksRef.current.map(col => col.map(b => ({ status: b.status, hits: b.hitsRemaining }))),
+                        score: scorePlayer,
+                        opponentScore: scoreAI,
+                        lives: lives,
+                        gameState: gameState,
+                        winner: winner,
+                        isGameOver: gameState === 'GAME_OVER' || gameState === 'VICTORY'
+                    });
+                }
+            } else {
+                // ... existing guest sync logic
+                syncBreakoutState({
+                    paddleX: playerPaddleRef.current.x / (width - playerPaddleWidth)
+                });
+
+                if (onlineBreakoutState.balls && onlineBreakoutState.balls.length > 0) {
+                    ballsRef.current = onlineBreakoutState.balls.map(b => ({
+                        x: b.x * width,
+                        y: b.y * height,
+                        dx: b.dx * width,
+                        dy: b.dy * height,
+                        speed: Math.sqrt(b.dx * b.dx + b.dy * b.dy) * width || 5,
+                        isAttached: false
+                    }));
+                }
+
+                // FIX: Sync Host paddle position for Guest
+                if (onlineBreakoutState.opponentPaddleX !== undefined) {
+                    aiPaddleRef.current.x = (1 - onlineBreakoutState.opponentPaddleX) * (width - aiPaddleWidth);
+                }
+
+                if (onlineBreakoutState.playerBricks) {
+                    playerBricksRef.current.forEach((col, c) => {
+                        col.forEach((b, r) => {
+                            // Guest bottom = Host TOP (which is Guest's playerBricks from store thanks to swap)
+                            if (onlineBreakoutState.playerBricks?.[c]?.[r]) {
+                                b.status = onlineBreakoutState.playerBricks[c][r].status;
+                                b.hitsRemaining = onlineBreakoutState.playerBricks[c][r].hits;
+                            }
+                        });
+                    });
+                    aiBricksRef.current.forEach((col, c) => {
+                        col.forEach((b, r) => {
+                            // Guest TOP = Host BOTTOM (which is Guest's opponentBricks from store thanks to swap)
+                            if (onlineBreakoutState.opponentBricks?.[c]?.[r]) {
+                                b.status = onlineBreakoutState.opponentBricks[c][r].status;
+                                b.hitsRemaining = onlineBreakoutState.opponentBricks[c][r].hits;
+                            }
+                        });
+                    });
+                }
+
+                if (onlineBreakoutState.score !== undefined) setScorePlayer(onlineBreakoutState.score);
+                if (onlineBreakoutState.opponentScore !== undefined) setScoreAI(onlineBreakoutState.opponentScore);
+                if (onlineBreakoutState.lives !== undefined) setLives(onlineBreakoutState.lives);
+                if (onlineBreakoutState.winner !== undefined) setWinner(onlineBreakoutState.winner);
+                if (onlineBreakoutState.gameState) setGameState(onlineBreakoutState.gameState);
+
+                // --- SKIP PHYSICS FOR GUEST ---
+                // We proceed to render only
+            }
+        }
+
+        const skipPhysics = isOnline && !isHost;
+
+        // ... Rendering starts 
+
         const playerPaddle = playerPaddleRef.current;
         const aiPaddle = aiPaddleRef.current;
         const balls = ballsRef.current;
         const brickHeight = 20;
 
-        const playerPaddleY = height - 100;
-        const aiPaddleY = 100 - PADDLE_HEIGHT;
+        // Paddle Positions Logic (USING SAME CONSTANTS)
+        let playerPaddleY, aiPaddleY;
+
+        if (gameMode === 'BRICKS') {
+            playerPaddleY = height - 100;
+            aiPaddleY = -100; // Hidden
+        } else {
+            // Re-use logic for perfect sync
+            const topBricksBottom = verticalMargin + brickTotalHeight;
+            aiPaddleY = topBricksBottom + paddleGap;
+
+            playerPaddleY = height - verticalMargin - brickTotalHeight - paddleGap - PADDLE_HEIGHT;
+        }
 
         // Apply Screenshake
         ctx.save();
@@ -372,6 +663,23 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
         // If theme background is transparent/rgba, we need a base color (e.g., slate-950)
         ctx.fillStyle = '#020617'; // Slate 950 base
         ctx.fillRect(0, 0, width, height);
+
+        // DRAW ZONES (Versus Mode Only)
+        if (gameMode !== 'BRICKS') {
+            // AI Zone (Top) - Reddish Tint
+            const gradientAi = ctx.createLinearGradient(0, 0, 0, height / 2);
+            gradientAi.addColorStop(0, 'rgba(239, 68, 68, 0.15)'); // Red-500 low alpha
+            gradientAi.addColorStop(1, 'rgba(239, 68, 68, 0)');
+            ctx.fillStyle = gradientAi;
+            ctx.fillRect(0, 0, width, height / 2);
+
+            // Player Zone (Bottom) - Blueish Tint
+            const gradientPlayer = ctx.createLinearGradient(0, height, 0, height / 2);
+            gradientPlayer.addColorStop(0, 'rgba(59, 130, 246, 0.15)'); // Blue-500 low alpha
+            gradientPlayer.addColorStop(1, 'rgba(59, 130, 246, 0)');
+            ctx.fillStyle = gradientPlayer;
+            ctx.fillRect(0, height / 2, width, height / 2);
+        }
 
         // Render Theme Background
         const bass = getBass(); // 0-255
@@ -683,79 +991,81 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
                             ctx.fillText(symbol, b.x + brickWidth / 2, b.y + brickHeight / 2 + 1);
                         }
 
-                        // Collision for each ball
-                        balls.forEach(ball => {
-                            if (ball.x > b.x && ball.x < b.x + brickWidth &&
-                                ball.y > b.y && ball.y < b.y + brickHeight && b.status === 1) {
+                        // Collision for each ball - ONLY IF physics master
+                        if (!isOnline || isHost) {
+                            balls.forEach(ball => {
+                                if (ball.x > b.x && ball.x < b.x + brickWidth &&
+                                    ball.y > b.y && ball.y < b.y + brickHeight && b.status === 1) {
 
-                                if (ball.isSuperCharged) {
-                                    b.hitsRemaining = 0;
-                                    b.status = 0;
-                                } else {
-                                    b.hitsRemaining--;
-                                    if (b.hitsRemaining <= 0) {
+                                    if (ball.isSuperCharged) {
+                                        b.hitsRemaining = 0;
                                         b.status = 0;
-                                    }
-
-                                    // Resolve Penetration (Brick Anti-Tunneling)
-                                    const overlapX = (brickWidth / 2 + BALL_RADIUS) - Math.abs(ball.x - (b.x + brickWidth / 2));
-                                    const overlapY = (brickHeight / 2 + BALL_RADIUS) - Math.abs(ball.y - (b.y + brickHeight / 2));
-
-                                    if (overlapX < overlapY) {
-                                        if (ball.x < b.x + brickWidth / 2) ball.x -= overlapX; else ball.x += overlapX;
-                                        ball.dx = -ball.dx;
                                     } else {
-                                        if (ball.y < b.y + brickHeight / 2) ball.y -= overlapY; else ball.y += overlapY;
-                                        ball.dy = -ball.dy;
-                                    }
-                                }
+                                        b.hitsRemaining--;
+                                        if (b.hitsRemaining <= 0) {
+                                            b.status = 0;
+                                        }
 
-                                if (b.status === 0) {
-                                    playCardDraw();
-                                    createParticles(b.x + brickWidth / 2, b.y + brickHeight / 2, gradientStart);
-                                    createShockwave(b.x + brickWidth / 2, b.y + brickHeight / 2, gradientStart);
-                                    if (b.isBonus) {
-                                        if (isAi) {
-                                            setPlayerBonus({ type: b.bonusType });
+                                        // Resolve Penetration (Brick Anti-Tunneling)
+                                        const overlapX = (brickWidth / 2 + BALL_RADIUS) - Math.abs(ball.x - (b.x + brickWidth / 2));
+                                        const overlapY = (brickHeight / 2 + BALL_RADIUS) - Math.abs(ball.y - (b.y + brickHeight / 2));
+
+                                        if (overlapX < overlapY) {
+                                            if (ball.x < b.x + brickWidth / 2) ball.x -= overlapX; else ball.x += overlapX;
+                                            ball.dx = -ball.dx;
                                         } else {
-                                            setAiBonusAvailable({ type: b.bonusType });
+                                            if (ball.y < b.y + brickHeight / 2) ball.y -= overlapY; else ball.y += overlapY;
+                                            ball.dy = -ball.dy;
                                         }
                                     }
 
-                                    if (b.specialType === 'EXPLOSIVE') {
-                                        explodeBrick(colIndex, rowIndex, isAi);
-                                    }
-                                    if (b.specialType === 'GOLDEN') {
-                                        if (isAi) setScorePlayer(s => s + 1000); else setScoreAI(s => s + 1000);
-                                        createShockwave(b.x, b.y, '#fbbf24');
-                                        playVictory();
-                                    }
-                                } else {
-                                    // Resolve Penetration (Brick Anti-Tunneling)
-                                    // Calculate overlap
-                                    const overlapX = (brickWidth / 2 + BALL_RADIUS) - Math.abs(ball.x - (b.x + brickWidth / 2));
-                                    const overlapY = (brickHeight / 2 + BALL_RADIUS) - Math.abs(ball.y - (b.y + brickHeight / 2));
+                                    if (b.status === 0) {
+                                        playCardDraw();
+                                        createParticles(b.x + brickWidth / 2, b.y + brickHeight / 2, gradientStart);
+                                        createShockwave(b.x + brickWidth / 2, b.y + brickHeight / 2, gradientStart);
+                                        if (b.isBonus) {
+                                            if (isAi) {
+                                                setPlayerBonus({ type: b.bonusType });
+                                            } else {
+                                                setAiBonusAvailable({ type: b.bonusType });
+                                            }
+                                        }
 
-                                    if (overlapX < overlapY) {
-                                        // X collision
-                                        if (ball.x < b.x + brickWidth / 2) ball.x -= overlapX; else ball.x += overlapX;
+                                        if (b.specialType === 'EXPLOSIVE') {
+                                            explodeBrick(colIndex, rowIndex, isAi);
+                                        }
+                                        if (b.specialType === 'GOLDEN') {
+                                            if (isAi) setScorePlayer(s => s + 1000); else setScoreAI(s => s + 1000);
+                                            createShockwave(b.x, b.y, '#fbbf24');
+                                            playVictory();
+                                        }
                                     } else {
-                                        // Y collision
-                                        if (ball.y < b.y + brickHeight / 2) ball.y -= overlapY; else ball.y += overlapY;
+                                        // Resolve Penetration (Brick Anti-Tunneling)
+                                        // Calculate overlap
+                                        const overlapX = (brickWidth / 2 + BALL_RADIUS) - Math.abs(ball.x - (b.x + brickWidth / 2));
+                                        const overlapY = (brickHeight / 2 + BALL_RADIUS) - Math.abs(ball.y - (b.y + brickHeight / 2));
+
+                                        if (overlapX < overlapY) {
+                                            // X collision
+                                            if (ball.x < b.x + brickWidth / 2) ball.x -= overlapX; else ball.x += overlapX;
+                                        } else {
+                                            // Y collision
+                                            if (ball.y < b.y + brickHeight / 2) ball.y -= overlapY; else ball.y += overlapY;
+                                        }
+
+                                        if (b.hitsRemaining >= 1) {
+                                            playCardPlace();
+                                            createParticles(ball.x, ball.y, '#94a3b8');
+                                        } else {
+                                            playCardFlip();
+                                            createParticles(ball.x, ball.y, '#ffffff');
+                                        }
                                     }
 
-                                    if (b.hitsRemaining >= 1) {
-                                        playCardPlace();
-                                        createParticles(ball.x, ball.y, '#94a3b8');
-                                    } else {
-                                        playCardFlip();
-                                        createParticles(ball.x, ball.y, '#ffffff');
-                                    }
+                                    shakeRef.current = 10;
                                 }
-
-                                shakeRef.current = 10;
-                            }
-                        });
+                            });
+                        }
                     }
                 });
             });
@@ -763,19 +1073,49 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
         };
 
 
-
         const activeAiBricks = drawBricks(aiBricksRef.current, theme.colors.brickAi, true);
-        if (activeAiBricks < (BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - scorePlayer) {
+        if ((!isOnline || isHost) && aiBricksRef.current.length > 0 && activeAiBricks < (BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - scorePlayer) {
             setScorePlayer((BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - activeAiBricks);
         }
 
-        const activePlayerBricks = gameMode === 'AI' ? drawBricks(playerBricksRef.current, theme.colors.brickBase, false) : 0;
-        if (gameMode === 'AI' && activePlayerBricks < (BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - scoreAI) {
+        // Zen Mode Brick Regen
+        if (isZenMode && activeAiBricks === 0) {
+            aiBricksRef.current = createBricks(true);
+            createShockwave(width / 2, 200, '#fff');
+            playVictory();
+            useGameStore.getState().unlockAchievement('ZEN_MASTER');
+        }
+
+        const activePlayerBricks = (gameMode === 'AI' || gameMode === 'ONLINE') ? drawBricks(playerBricksRef.current, theme.colors.brickBase, false) : 0;
+        if ((!isOnline || isHost) && playerBricksRef.current.length > 0 && (gameMode === 'AI' || gameMode === 'ONLINE') && activePlayerBricks < (BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - scoreAI) {
             setScoreAI((BRICK_COLUMN_COUNT * BRICK_ROW_COUNT) - activePlayerBricks);
         }
 
-        if (activeAiBricks === 0) { setWinner('PLAYER'); setGameState('VICTORY'); playVictory(); return; }
-        if (gameMode === 'AI' && activePlayerBricks === 0) { setWinner('AI'); setGameState('GAME_OVER'); playError(); return; }
+        // Victory / Game Over logic (Only host or local calculates this)
+        if ((!isOnline || isHost) && !isBossMode && !isZenMode && aiBricksRef.current.length > 0 && activeAiBricks === 0) {
+            setWinner('PLAYER');
+            setGameState('VICTORY');
+            playVictory();
+            const wasUntouchable = lives === 3;
+            useGameStore.getState().addWin();
+            if (wasUntouchable) {
+                useGameStore.getState().unlockAchievement('UNTOUCHABLE');
+            }
+            return;
+        }
+        if ((!isOnline || isHost) && isBossMode && bossHp <= 0) {
+            setWinner('PLAYER');
+            setGameState('VICTORY');
+            playVictory();
+            useGameStore.getState().addWin(true); // wasBossDefeated = true
+            return;
+        }
+        if ((!isOnline || isHost) && gameMode === 'AI' && playerBricksRef.current.length > 0 && activePlayerBricks === 0) {
+            setWinner('AI');
+            setGameState('GAME_OVER');
+            playError();
+            return;
+        }
 
         // Draw Balls
         balls.forEach(ball => {
@@ -808,113 +1148,165 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
             ctx.shadowBlur = 0;
             ctx.closePath();
 
-            // Physics (only if not attached)
-            if (!ball.isAttached) {
-                // Apply Time Scale
-                const currentSpeedX = ball.dx * (timeScaleRef.current || 1.0);
-                const currentSpeedY = ball.dy * (timeScaleRef.current || 1.0);
+            // --- BALL PHYSICS (HOST ONLY) ---
+            if (!skipPhysics) {
+                if (!ball.isAttached) {
+                    // Apply Time Scale
+                    const currentSpeedX = ball.dx * (timeScaleRef.current || 1.0);
+                    const currentSpeedY = ball.dy * (timeScaleRef.current || 1.0);
 
-                ball.x += currentSpeedX;
-                ball.y += currentSpeedY;
+                    ball.x += currentSpeedX;
+                    ball.y += currentSpeedY;
 
-                if (ball.x + ball.dx > width - BALL_RADIUS || ball.x + ball.dx < BALL_RADIUS) {
-                    ball.dx = -ball.dx;
-                    playCardFlip();
-                    shakeRef.current = 5;
+                    if (ball.x + ball.dx > width - BALL_RADIUS || ball.x + ball.dx < BALL_RADIUS) {
+                        ball.dx = -ball.dx;
+                        playCardFlip();
+                        shakeRef.current = 5;
+                    }
+
+                    if (!Number.isFinite(ball.x) || !Number.isFinite(ball.y)) {
+                        ball.x = width / 2;
+                        ball.y = height / 2;
+                        ball.dx = 0;
+                        ball.dy = 0;
+                        ball.isAttached = true;
+                    }
+
+                    if (ball.y + ball.dy < BALL_RADIUS) {
+                        ball.dy = -ball.dy;
+                        playCardFlip();
+                        shakeRef.current = 5;
+                    }
                 }
 
-                if (!Number.isFinite(ball.x) || !Number.isFinite(ball.y)) {
-                    ball.x = width / 2;
-                    ball.y = height / 2;
-                    ball.dx = 0;
-                    ball.dy = 0;
-                    ball.isAttached = true;
-                }
-
-                if (ball.y + ball.dy < BALL_RADIUS) {
-                    ball.dy = -ball.dy;
-                    playCardFlip();
-                    shakeRef.current = 5;
-                }
-            }
-
-            if (ball.y + ball.dy > height - 20 - BALL_RADIUS) {
-                // Shield Logic
-                if (shieldActive) {
-                    ball.dy = -Math.abs(ball.dy);
-                    ball.y = height - 20 - BALL_RADIUS - 5; // Push above shield
-                    playVictory();
-                    setShieldActive(false); // One-time use
-                    createShockwave(ball.x, height - 10, '#00f2ff');
-                    shakeRef.current = 10;
-                } else if (gameMode === 'BRICKS') {
-                    // In solo mode, if only one ball left, lose life
-                    if (balls.length === 1) {
-                        if (lives > 1) {
-                            setLives(prev => prev - 1);
-                            playError();
-                            ballsRef.current = [{
-                                x: playerPaddle.x + playerPaddleWidth / 2,
-                                y: playerPaddleY - BALL_RADIUS - 5,
-                                dx: 0,
-                                dy: 0,
-                                speed: SPEED_PROFILES[selectedDifficulty].initial,
-                                isSuperCharged: false,
-                                isAttached: true
-                            }];
-                            shakeRef.current = 15;
+                if (ball.y + ball.dy > height - 20 - BALL_RADIUS) {
+                    // Shield Logic
+                    if (shieldActive) {
+                        ball.dy = -Math.abs(ball.dy);
+                        playCardFlip();
+                        createShockwave(ball.x, ball.y, theme.colors.shield);
+                        shakeRef.current = 10;
+                    } else {
+                        // Normal fall
+                        if (isZenMode) {
+                            ball.dy = -Math.abs(ball.dy);
+                            ball.y = height - 120; // Safety teleport
+                            playCardFlip();
                         } else {
-                            setLives(0);
-                            setGameState('GAME_OVER');
-                            playError();
+                            // Regular modes: Lose life
+                            if (balls.length > 1) {
+                                ballsRef.current = balls.filter(b => b !== ball);
+                            } else {
+                                setLives(prev => {
+                                    const newLives = prev - 1;
+                                    if (newLives <= 0) {
+                                        setWinner('AI');
+                                        setGameState('GAME_OVER');
+                                        playError();
+                                        if (isOnline && isHost) {
+                                            syncBreakoutState({ gameState: 'GAME_OVER', winner: 'AI', isGameOver: true });
+                                        }
+                                    } else {
+                                        ball.isAttached = true;
+                                        ball.dx = 0;
+                                        ball.dy = 0;
+                                    }
+                                    return newLives;
+                                });
+                            }
                         }
-                    } else {
-                        // Remove this ball
-                        ballsRef.current = ballsRef.current.filter(b => b !== ball);
                     }
-                } else {
-                    ball.dy = -ball.dy;
-                    playCardFlip();
-                    shakeRef.current = 5;
                 }
-            }
 
-            const handlePaddleCollision = (paddle, paddleY, isBottom, currentPaddleWidth) => {
-                // Expanded Hitbox for edge cases
-                if (!ball.isAttached &&
-                    ball.x + BALL_RADIUS >= paddle.x &&
-                    ball.x - BALL_RADIUS <= paddle.x + currentPaddleWidth) {
+                const handlePaddleCollision = (paddle, paddleY, isBottom, currentPaddleWidth) => {
+                    if (!ball.isAttached &&
+                        ball.x + BALL_RADIUS >= paddle.x &&
+                        ball.x - BALL_RADIUS <= paddle.x + currentPaddleWidth) {
 
-                    // Resolve Penetration (Tunneling Fix)
-                    if (isBottom) {
-                        ball.y = paddleY - BALL_RADIUS - 0.5;
-                    } else {
-                        ball.y = paddleY + PADDLE_HEIGHT + 0.5 + BALL_RADIUS;
+                        if (isBottom) {
+                            ball.y = paddleY - BALL_RADIUS - 0.5;
+                        } else {
+                            ball.y = paddleY + PADDLE_HEIGHT + 0.5 + BALL_RADIUS;
+                        }
+
+                        let collidePoint = (ball.x - (paddle.x + currentPaddleWidth / 2)) / (currentPaddleWidth / 2);
+                        let angle = collidePoint * (Math.PI / 3);
+                        const profile = SPEED_PROFILES[selectedDifficulty];
+                        let speed = Math.min(ball.speed * profile.acceleration, profile.max);
+                        ball.speed = speed;
+                        ball.dx = speed * Math.sin(angle);
+                        ball.dy = isBottom ? -speed * Math.cos(angle) : speed * Math.cos(angle);
+                        playCardPlace();
+                        shakeRef.current = 12;
                     }
+                };
 
-                    let collidePoint = (ball.x - (paddle.x + currentPaddleWidth / 2)) / (currentPaddleWidth / 2);
-                    let angle = collidePoint * (Math.PI / 3);
-                    const profile = SPEED_PROFILES[selectedDifficulty];
-                    let speed = Math.min(ball.speed * profile.acceleration, profile.max);
-                    ball.speed = speed;
-                    ball.dx = speed * Math.sin(angle);
-                    ball.dy = isBottom ? -speed * Math.cos(angle) : speed * Math.cos(angle);
-                    ball.dx += collidePoint * 2;
-                    playCardPlace();
-                    shakeRef.current = 12;
+                if (ball.y + BALL_RADIUS >= playerPaddleY && ball.y - BALL_RADIUS <= playerPaddleY + PADDLE_HEIGHT && ball.dy > 0) {
+                    handlePaddleCollision(playerPaddle, playerPaddleY, true, playerPaddleWidth);
                 }
-            };
-
-            if (ball.y + BALL_RADIUS >= playerPaddleY && ball.y - BALL_RADIUS <= playerPaddleY + PADDLE_HEIGHT && ball.dy > 0) {
-                handlePaddleCollision(playerPaddle, playerPaddleY, true, playerPaddleWidth);
-            }
-            if (gameMode === 'AI' && ball.y - BALL_RADIUS <= aiPaddleY + PADDLE_HEIGHT && ball.y + BALL_RADIUS >= aiPaddleY && ball.dy < 0) {
-                handlePaddleCollision(aiPaddle, aiPaddleY, false, PADDLE_WIDTH);
+                if ((gameMode === 'AI' || gameMode === 'ONLINE') && ball.y - BALL_RADIUS <= aiPaddleY + PADDLE_HEIGHT && ball.y + BALL_RADIUS >= aiPaddleY && ball.dy < 0) {
+                    handlePaddleCollision(aiPaddle, aiPaddleY, false, aiPaddleWidth);
+                }
             }
         });
 
+        // --- BOSS LOGIC ---
+        if (isBossMode) {
+            const boss = bossRef.current;
+            // Boss Movement
+            boss.x += boss.dx;
+            if (boss.x <= 0 || boss.x + boss.width >= width) {
+                boss.dx = -boss.dx;
+            }
+
+            // Boss Attack (e.g., spawn bricks or shoot)
+            if (Date.now() - boss.lastAttack > 3000) {
+                boss.lastAttack = Date.now();
+                // Spawn a few bricks randomly
+                const col = Math.floor(Math.random() * BRICK_COLUMN_COUNT);
+                const r = Math.floor(Math.random() * 2);
+                if (aiBricksRef.current[col] && aiBricksRef.current[col][r]) {
+                    aiBricksRef.current[col][r].status = 1;
+                    aiBricksRef.current[col][r].hitsRemaining = 1;
+                    createParticles(aiBricksRef.current[col][r].x, aiBricksRef.current[col][r].y, '#f00');
+                }
+            }
+
+            // Ball-Boss Collision
+            balls.forEach(ball => {
+                if (ball.x > boss.x && ball.x < boss.x + boss.width &&
+                    ball.y > boss.y && ball.y < boss.y + boss.height) {
+
+                    // Damage Boss
+                    setBossHp(prev => Math.max(0, prev - 5));
+                    ball.dy = -ball.dy;
+                    ball.y = boss.y + boss.height + BALL_RADIUS + 2; // Reposition
+                    createShockwave(ball.x, ball.y, '#f00');
+                    createParticles(ball.x, ball.y, '#f00');
+                    shakeRef.current = 20;
+                    playCardFlip();
+                }
+            });
+
+            // Render Boss
+            ctx.fillStyle = "#ef4444";
+            ctx.shadowColor = "#ef4444";
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.roundRect(boss.x, boss.y, boss.width, boss.height, 12);
+            ctx.fill();
+
+            // Health Bar on Boss
+            const hpWidth = (bossHp / 100) * boss.width;
+            ctx.fillStyle = "#4ade80";
+            ctx.fillRect(boss.x, boss.y - 10, hpWidth, 4);
+
+            ctx.shadowBlur = 0;
+            ctx.closePath();
+        }
+
         // Update AI state
-        updateAI();
+        if (!isOnline) updateAI();
 
         ctx.restore();
         requestRef.current = requestAnimationFrame(update);
@@ -952,20 +1344,20 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
             shakeRef.current = 10;
         } else if (type === 'MULTI_BALL') {
             const newBalls = [];
-            ballsRef.current.forEach(ball => {
-                // Add two more balls with slightly different angles
+            if (ballsRef.current.length > 0) {
+                const referenceBall = ballsRef.current[0];
                 for (let i = 0; i < 2; i++) {
                     newBalls.push({
-                        ...ball,
-                        dx: ball.dx + (Math.random() - 0.5) * 4,
-                        dy: -Math.abs(ball.dy),
-                        speed: ball.speed,
-                        isSuperCharged: ball.isSuperCharged
+                        ...referenceBall,
+                        dx: referenceBall.dx + (Math.random() - 0.5) * 4,
+                        dy: -Math.abs(referenceBall.dy),
+                        speed: referenceBall.speed,
+                        isSuperCharged: referenceBall.isSuperCharged
                     });
                 }
-            });
+            }
             ballsRef.current = [...ballsRef.current, ...newBalls];
-            ballsRef.current = [...ballsRef.current, ...newBalls];
+            if (ballsRef.current.length > 10) ballsRef.current = ballsRef.current.slice(0, 10);
             shakeRef.current = 15;
         } else if (type === 'BULLET_TIME') {
             timeScaleRef.current = 0.3; // Slow motion
@@ -1021,35 +1413,36 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
             }, 6000);
         } else if (type === 'MULTI_BALL') {
             const newBalls = [];
-            ballsRef.current.forEach(ball => {
+            if (ballsRef.current.length > 0) {
+                const referenceBall = ballsRef.current[0];
                 for (let i = 0; i < 2; i++) {
                     newBalls.push({
-                        ...ball,
-                        dx: ball.dx + (Math.random() - 0.5) * 4,
-                        dy: -Math.abs(ball.dy), // Shoot downwards for AI? No, keep existing momentum direction but slight angle
-                        speed: ball.speed,
-                        isSuperCharged: ball.isSuperCharged
+                        ...referenceBall,
+                        dx: referenceBall.dx + (Math.random() - 0.5) * 4,
+                        dy: Math.abs(referenceBall.dy), // AI shoots downwards usually
+                        speed: referenceBall.speed,
+                        isSuperCharged: referenceBall.isSuperCharged
                     });
                 }
-            });
-            // Cap max balls to prevent freeze
-            if (ballsRef.current.length + newBalls.length < 50) {
-                ballsRef.current = [...ballsRef.current, ...newBalls];
             }
+            ballsRef.current = [...ballsRef.current, ...newBalls];
+            if (ballsRef.current.length > 10) ballsRef.current = ballsRef.current.slice(0, 10);
         }
         setAiBonusAvailable(null);
     };
 
     const cycleTheme = () => {
-        playClick();
-        const themeIds = Object.keys(THEMES);
-        const currentIndex = themeIds.indexOf(currentTheme);
-        const nextIndex = (currentIndex + 1) % themeIds.length;
-        setTheme(themeIds[nextIndex]);
+        const { currentTheme, setTheme, unlockedThemes } = useGameStore.getState();
+        const availableThemes = THEMES.map(t => t.id).filter(id => unlockedThemes.includes(id));
+        const currentIndex = availableThemes.indexOf(currentTheme);
+        const nextIndex = (currentIndex + 1) % availableThemes.length;
+        setTheme(availableThemes[nextIndex]);
     };
 
     const startSolo = () => {
         playClick();
+        setIsZenMode(false);
+        setIsBossMode(false);
         setGameMode('BRICKS');
         setLives(3);
         initGame();
@@ -1058,6 +1451,8 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
 
     const startAI = () => {
         playClick();
+        setIsZenMode(false);
+        setIsBossMode(false);
         setGameMode('AI');
         initGame();
         setGameState('PLAYING');
@@ -1071,7 +1466,7 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
                     <div className="flex items-center justify-between px-6 py-2 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
                         <div className="flex flex-col items-center">
                             <span className="text-[9px] font-black text-purple-400 uppercase tracking-tighter">
-                                {gameMode === 'BRICKS' ? 'VIES' : 'IA SYSTEM'}
+                                {gameMode === 'BRICKS' ? 'VIES' : (isOnline ? (players.find(p => p.id !== socketId)?.name || 'ADVERSAIRE') : 'IA SYSTEM')}
                             </span>
                             <span className="text-2xl font-black text-white tabular-nums">
                                 {gameMode === 'BRICKS'
@@ -1079,20 +1474,58 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
                                     : (BRICK_COLUMN_COUNT * BRICK_ROW_COUNT - scorePlayer)}
                             </span>
                         </div>
-
-                        {/* Quit Button Integrated in Center */}
+                        {/* Theme Unlock Notification */}
+                        <AnimatePresence>
+                            {showUnlockNotification && (
+                                <motion.div
+                                    key="unlock-notification"
+                                    initial={{ y: 100, opacity: 0 }}
+                                    animate={{ y: -100, opacity: 1 }}
+                                    exit={{ y: 100, opacity: 0 }}
+                                    className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-cyan-500/50 rounded-2xl p-6 shadow-[0_0_50px_rgba(34,211,238,0.3)] z-[100] flex flex-col items-center gap-3 backdrop-blur-xl"
+                                >
+                                    <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                                        <Trophy className="w-10 h-10 text-cyan-400" />
+                                    </div>
+                                    <div className="text-center">
+                                        <h3 className="text-xl font-black text-white italic tracking-tighter">NOUVELLE DÉCOUVERTE !</h3>
+                                        <p className="text-sm text-cyan-200/70">Thème <span className="text-cyan-400 font-bold uppercase">{showUnlockNotification.themeName}</span> débloqué.</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowUnlockNotification(null)}
+                                        className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-black text-sm rounded-xl hover:scale-105 active:scale-95 transition-all"
+                                    >
+                                        CONTINUER
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                        {/* Pause / Menu Button */}
                         <div className="flex flex-col items-center">
                             <button
-                                onClick={() => setShowQuitConfirm(true)}
-                                className="w-9 h-9 rounded-full bg-white/5 hover:bg-red-500/20 border border-white/10 flex items-center justify-center transition-all active:scale-95 group"
+                                onClick={() => {
+                                    if (!isOnline) {
+                                        setGameState('PAUSED');
+                                        playClick();
+                                    }
+                                }}
+                                disabled={isOnline}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all group ${isOnline
+                                    ? 'bg-slate-800 border border-white/5 opacity-50 cursor-not-allowed'
+                                    : 'bg-white/5 hover:bg-cyan-500/20 border border-white/10 active:scale-95'
+                                    }`}
                             >
-                                <X className="w-4 h-4 text-white/40 group-hover:text-red-400 transition-colors" />
+                                {isOnline ? (
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                ) : (
+                                    <Pause className="w-4 h-4 text-white/60 group-hover:text-cyan-400 transition-colors" />
+                                )}
                             </button>
                         </div>
 
                         <div className="flex flex-col items-center">
                             <span className="text-[9px] font-black text-cyan-400 uppercase tracking-tighter">
-                                {gameMode === 'BRICKS' ? 'SCORE' : 'PLAYER'}
+                                {gameMode === 'BRICKS' ? 'SCORE' : (isOnline ? 'MOI' : 'PLAYER')}
                             </span>
                             <span className="text-2xl font-black text-white tabular-nums">
                                 {gameMode === 'BRICKS' ? scorePlayer : (BRICK_COLUMN_COUNT * BRICK_ROW_COUNT - scoreAI)}
@@ -1112,6 +1545,142 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
 
                     {/* Menu Overlay - Premium Design */}
                     <AnimatePresence>
+                        {/* PAUSE OVERLAY */}
+                        {gameState === 'PAUSED' && (
+                            <motion.div
+                                key="pause-overlay"
+                                initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                                animate={{ opacity: 1, backdropFilter: "blur(10px)" }}
+                                exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                                className="absolute inset-0 bg-slate-950/80 z-50 flex flex-col items-center justify-center p-6 space-y-6"
+                            >
+                                <div className="text-center space-y-2">
+                                    <h2 className="text-4xl font-black text-white tracking-tighter italic">PAUSE</h2>
+                                    <div className="h-1 w-20 bg-cyan-500 mx-auto rounded-full" />
+                                </div>
+
+                                {showGuide ? (
+                                    <div className="w-full max-w-sm h-[60vh] overflow-y-auto bg-slate-900/90 rounded-2xl border border-white/10 p-4 space-y-6 custom-scrollbar">
+                                        <div>
+                                            <h3 className="text-lg font-black text-cyan-400 mb-2 uppercase tracking-wider flex items-center gap-2">
+                                                <Layers className="w-4 h-4" /> Briques
+                                            </h3>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-3 bg-white/5 p-2 rounded-lg">
+                                                    <div className="w-8 h-4 bg-cyan-500 rounded-sm" />
+                                                    <div className="text-sm"><span className="font-bold text-white">Standard</span> : 1 Coup</div>
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-white/5 p-2 rounded-lg">
+                                                    <div className="w-8 h-4 bg-purple-600 border border-white/30 rounded-sm" />
+                                                    <div className="text-sm"><span className="font-bold text-white">Renforcée</span> : 2-3 Coups</div>
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-white/5 p-2 rounded-lg">
+                                                    <div className="w-8 h-4 bg-red-500 animate-pulse rounded-sm" />
+                                                    <div className="text-sm"><span className="font-bold text-white">Explosive</span> : Boom 💥</div>
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-white/5 p-2 rounded-lg">
+                                                    <div className="w-8 h-4 bg-amber-400 shadow-[0_0_10px_orange] rounded-sm" />
+                                                    <div className="text-sm"><span className="font-bold text-white">Dorée</span> : +1000 Pts</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h3 className="text-lg font-black text-emerald-400 mb-2 uppercase tracking-wider flex items-center gap-2">
+                                                <Zap className="w-4 h-4" /> Bonus
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <div className="bg-white/5 p-2 rounded flex flex-col items-center text-center gap-1">
+                                                    <Zap className="w-4 h-4 text-yellow-400" />
+                                                    <span className="font-bold text-slate-200">Super Ball</span>
+                                                </div>
+                                                <div className="bg-white/5 p-2 rounded flex flex-col items-center text-center gap-1">
+                                                    <ArrowLeftRight className="w-4 h-4 text-blue-400" />
+                                                    <span className="font-bold text-slate-200">Large Paddle</span>
+                                                </div>
+                                                <div className="bg-white/5 p-2 rounded flex flex-col items-center text-center gap-1">
+                                                    <Users className="w-4 h-4 text-green-400" />
+                                                    <span className="font-bold text-slate-200">Multi-Ball</span>
+                                                </div>
+                                                <div className="bg-white/5 p-2 rounded flex flex-col items-center text-center gap-1">
+                                                    <RotateCcw className="w-4 h-4 text-purple-400" />
+                                                    <span className="font-bold text-slate-200">Slow Mo</span>
+                                                </div>
+                                                <div className="bg-white/5 p-2 rounded flex flex-col items-center text-center gap-1">
+                                                    <ShieldAlert className="w-4 h-4 text-cyan-400" />
+                                                    <span className="font-bold text-slate-200">Shield</span>
+                                                </div>
+                                                <div className="bg-white/5 p-2 rounded flex flex-col items-center text-center gap-1">
+                                                    <Zap className="w-4 h-4 text-red-500" />
+                                                    <span className="font-bold text-slate-200">Laser</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => setShowGuide(false)}
+                                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all"
+                                        >
+                                            RETOUR
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col w-full max-w-xs gap-4">
+                                        <button
+                                            onClick={() => {
+                                                setGameState('PLAYING');
+                                                playClick();
+                                            }}
+                                            className="w-full py-4 bg-cyan-500 hover:bg-cyan-400 text-white font-black text-lg rounded-xl shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-3"
+                                        >
+                                            <Play className="w-5 h-5 fill-current" />
+                                            REPRENDRE
+                                        </button>
+
+                                        <button
+                                            onClick={() => setShowGuide(true)}
+                                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-sm rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3 border border-cyan-500/20"
+                                        >
+                                            <Monitor className="w-4 h-4" />
+                                            GUIDE DU JEU
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                onBackToMenu();
+                                                playClick();
+                                            }}
+                                            className="w-full py-4 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 border border-white/10 text-slate-300 font-bold text-sm rounded-xl active:scale-95 transition-all flex items-center justify-center gap-3"
+                                        >
+                                            <LogOut className="w-5 h-5" />
+                                            QUITTER LA PARTIE
+                                        </button>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {isOnline && !isHost && !initialStateReceived && (
+                            <motion.div
+                                key="guest-sync-overlay"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center"
+                            >
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                    className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full mb-6 shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+                                />
+                                <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2 italic">SYNCHRONISATION</h2>
+                                <p className="text-cyan-400 font-bold animate-pulse text-sm">Réception du terrain de l'hôte...</p>
+                                <div className="mt-8 pt-8 border-t border-white/5 w-full flex flex-col items-center">
+                                    <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">En attente de l'autorité</p>
+                                    <p className="text-[10px] text-cyan-500/50 font-mono">SKYBRICK_VERSUS_v1.0.4_SYNC</p>
+                                </div>
+                            </motion.div>
+                        )}
+
                         {gameState === 'MENU' && (
                             <motion.div
                                 key="game-menu-overlay"
@@ -1201,7 +1770,26 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
                                                     <span className="text-[10px] text-cyan-200/60 font-bold uppercase tracking-wider">Arcade Classique</span>
                                                     <span className="text-2xl font-black text-white italic tracking-tighter">SOLO RUN</span>
                                                 </div>
-                                                <Card className="w-8 h-8 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                                <IDCard className="w-8 h-8 text-cyan-400 group-hover:scale-110 transition-transform" />
+                                            </button>
+
+                                            {/* ZEN MODE ENTRY */}
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedMode('SOLO');
+                                                    setGameState('PLAYING');
+                                                    setLives(Infinity);
+                                                    setIsZenMode(true);
+                                                    startSolo();
+                                                }}
+                                                className="w-full relative h-16 bg-gradient-to-br from-emerald-900/40 to-slate-900/40 border border-emerald-500/30 rounded-2xl p-4 flex flex-row items-center justify-between gap-4 group overflow-hidden transition-all hover:border-emerald-400/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)] active:scale-95 mt-2"
+                                            >
+                                                <div className="absolute inset-0 bg-emerald-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <div className="flex flex-col items-start">
+                                                    <span className="text-[10px] text-emerald-200/60 font-bold uppercase tracking-wider">Méditation Infinie</span>
+                                                    <span className="text-lg font-black text-white italic tracking-tighter">MODE ZEN</span>
+                                                </div>
+                                                <Sparkles className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
                                             </button>
                                         </div>
 
@@ -1209,7 +1797,7 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-2 px-1">
                                                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Modes Versus</span>
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Modes Versus & Boss</span>
                                                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
@@ -1223,13 +1811,27 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
                                                 </button>
 
                                                 <button
-                                                    onClick={onStartOnline}
-                                                    className="relative h-20 bg-slate-900/40 border border-white/10 rounded-2xl p-3 flex flex-col justify-center items-center gap-1 group overflow-hidden transition-all hover:border-white/30 hover:bg-white/5 active:scale-95"
+                                                    onClick={() => {
+                                                        setGameState('PLAYING');
+                                                        setIsBossMode(true);
+                                                        setBossHp(100);
+                                                        startSolo();
+                                                    }}
+                                                    className="relative h-20 bg-gradient-to-br from-red-900/40 to-slate-900/40 border border-red-500/30 rounded-2xl p-3 flex flex-col justify-center items-center gap-1 group overflow-hidden transition-all hover:border-red-400/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.2)] active:scale-95"
                                                 >
-                                                    <Users className="w-5 h-5 text-slate-400 group-hover:text-white mb-1 group-hover:scale-110 transition-transform" />
-                                                    <span className="text-sm font-black text-slate-300 group-hover:text-white">ONLINE</span>
+                                                    <div className="absolute inset-0 bg-red-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    <ShieldAlert className="w-5 h-5 text-red-400 mb-1 group-hover:scale-110 transition-transform" />
+                                                    <span className="text-sm font-black text-white">BOSS RUSH</span>
                                                 </button>
                                             </div>
+
+                                            <button
+                                                onClick={onStartOnline}
+                                                className="w-full relative h-16 bg-slate-900/40 border border-white/10 rounded-2xl p-3 flex flex-row justify-center items-center gap-2 group overflow-hidden transition-all hover:border-white/30 hover:bg-white/5 active:scale-95"
+                                            >
+                                                <Users className="w-5 h-5 text-slate-400 group-hover:text-white group-hover:scale-110 transition-transform" />
+                                                <span className="text-sm font-black text-slate-300 group-hover:text-white uppercase tracking-tighter">Multi Joueur Online</span>
+                                            </button>
                                         </div>
                                     </div>
 
@@ -1285,8 +1887,9 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
 
                         {/* BONUS BUTTON - Bottom Left Corner */}
                         {playerBonus && gameState === 'PLAYING' && (
-                            <div className="absolute bottom-6 left-6 flex flex-col items-center z-[70]">
+                            <div key="player-bonus-container" className="absolute bottom-6 left-6 flex flex-col items-center z-[70]">
                                 <motion.button
+                                    key="bonus-button"
                                     initial={{ scale: 0, opacity: 0, y: 30 }}
                                     animate={{ scale: 1, opacity: 1, y: 0 }}
                                     exit={{ scale: 0, opacity: 0, y: 30 }}
@@ -1333,6 +1936,7 @@ export default function VersusBreakout({ onBackToMenu, onStartOnline, onPlayingS
                         )}
 
                         <ConfirmModal
+                            key="quit-confirm-modal"
                             isOpen={showQuitConfirm}
                             onClose={() => setShowQuitConfirm(false)}
                             onConfirm={onBackToMenu}

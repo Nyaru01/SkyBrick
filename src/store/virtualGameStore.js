@@ -1,5 +1,5 @@
 /**
- * Virtual Skyjo Game Store
+ * Virtual SkyBrick Game Store
  * Manages state for the virtual card game mode
  */
 import { create } from 'zustand';
@@ -13,7 +13,7 @@ import {
     endTurn,
     calculateFinalScores,
     getValidActions,
-} from '../lib/skyjoEngine';
+} from '../lib/skyBrickEngine';
 import { useGameStore } from './gameStore';
 import {
     AI_DIFFICULTY,
@@ -21,7 +21,7 @@ import {
     chooseInitialCardsToReveal,
     decideDrawSource,
     decideCardAction,
-} from '../lib/skyjoAI';
+} from '../lib/skyBrickAI';
 
 export const useVirtualGameStore = create((set, get) => ({
     // Game state

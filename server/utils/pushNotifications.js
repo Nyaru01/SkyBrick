@@ -12,7 +12,7 @@ if (!publicKey || !privateKey) {
 } else {
     try {
         webpush.setVapidDetails(
-            process.env.VAPID_SUBJECT || 'mailto:contact@skyjo-score.com',
+            process.env.VAPID_SUBJECT || 'mailto:contact@skybrick-app.com',
             publicKey,
             privateKey
         );

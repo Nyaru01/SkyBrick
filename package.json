@@ -1,7 +1,7 @@
 {
-  "name": "skyjo-score-app",
+  "name": "skybrick-app",
   "private": true,
-  "version": "2.1.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"node server/index.js\" \"vite\"",

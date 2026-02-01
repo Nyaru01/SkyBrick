@@ -41,7 +41,7 @@ const PodiumStep = ({ user, rank, delay }) => {
                     {user?.name || '---'}
                 </p>
                 <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5">
-                    <Star className="w-3 h-3 text-skyjo-blue fill-skyjo-blue" />
+                    <Star className="w-3 h-3 text-cyan-400 fill-cyan-400" />
                     <span className={`font-black ${isFirst ? 'text-sm text-white' : 'text-[10px] text-slate-400'}`}>
                         {user?.xp || 0}
                     </span>
@@ -66,13 +66,13 @@ export default function Leaderboard({ data, currentUserId, type, setType }) {
             <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/5 mx-auto w-fit">
                 <button
                     onClick={() => setType('friends')}
-                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${type === 'friends' ? 'bg-skyjo-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${type === 'friends' ? 'bg-cyan-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     Amis
                 </button>
                 <button
                     onClick={() => setType('global')}
-                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${type === 'global' ? 'bg-skyjo-blue text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${type === 'global' ? 'bg-cyan-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     Mondial
                 </button>
@@ -80,7 +80,7 @@ export default function Leaderboard({ data, currentUserId, type, setType }) {
 
             {/* Podium */}
             {data.length > 0 && (
-                <div className="flex items-end justify-center gap-4 py-10 px-2 bg-gradient-to-b from-skyjo-blue/10 to-transparent rounded-3xl border border-white/5 relative overflow-hidden shadow-2xl">
+                <div className="flex items-end justify-center gap-4 py-10 px-2 bg-gradient-to-b from-cyan-500/10 to-transparent rounded-3xl border border-white/5 relative overflow-hidden shadow-2xl">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.1),transparent)] pointer-events-none" />
                     {top3Arr[0] && <PodiumStep user={top3Arr[0]} rank={2} delay={0.2} />}
                     <PodiumStep user={top3Arr[1]} rank={1} delay={0.1} />
@@ -108,7 +108,7 @@ export default function Leaderboard({ data, currentUserId, type, setType }) {
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.4 + index * 0.05 }}
                             >
-                                <Card className={`glass-premium border-white/5 overflow-hidden transition-all duration-300 ${isMe ? 'bg-skyjo-blue/10 border-skyjo-blue/30 scale-[1.02] shadow-lg shadow-skyjo-blue/10' : 'hover:bg-white/5'}`}>
+                                <Card className={`glass-premium border-white/5 overflow-hidden transition-all duration-300 ${isMe ? 'bg-cyan-500/10 border-cyan-500/30 scale-[1.02] shadow-lg shadow-cyan-500/10' : 'hover:bg-white/5'}`}>
                                     <CardContent className="p-3 flex items-center justify-between">
                                         <div className="flex items-center gap-4">
                                             <div className="w-6 text-center font-black text-slate-500 text-xs">
@@ -119,7 +119,7 @@ export default function Leaderboard({ data, currentUserId, type, setType }) {
                                             </div>
                                             <div>
                                                 <p className={`font-bold text-sm ${isMe ? 'text-white' : 'text-slate-200'}`}>
-                                                    {user.name} {isMe && <span className="text-[8px] bg-skyjo-blue text-white px-1.5 py-0.5 rounded-full ml-1">VOUS</span>}
+                                                    {user.name} {isMe && <span className="text-[8px] bg-cyan-500 text-white px-1.5 py-0.5 rounded-full ml-1">VOUS</span>}
                                                 </p>
                                                 <p className="text-[10px] text-slate-500 font-medium">@{user.vibe_id.replace('#', '')}</p>
                                             </div>
@@ -127,7 +127,7 @@ export default function Leaderboard({ data, currentUserId, type, setType }) {
                                         <div className="text-right">
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <span className="text-xs font-black text-white">{user.xp}</span>
-                                                <Star className="w-3 h-3 text-skyjo-blue fill-skyjo-blue" />
+                                                <Star className="w-3 h-3 text-cyan-400 fill-cyan-400" />
                                             </div>
                                             <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Niveau {user.level}</p>
                                         </div>

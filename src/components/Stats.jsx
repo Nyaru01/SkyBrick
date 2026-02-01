@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
 import { cn } from '../lib/utils';
 import AchievementsList from './AchievementsList';
+import RewardsTrack from './RewardsTrack';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, BarChart, Bar } from 'recharts';
 
 // Palette de couleurs pour les joueurs (forced dark theme)
@@ -121,7 +122,7 @@ const Podium = ({ players }) => {
 };
 
 // Stat Card Component
-function StatCard({ icon: Icon, title, value, subtitle, colorClass = 'text-skyjo-blue', index, className }) {
+function StatCard({ icon: Icon, title, value, subtitle, colorClass = 'text-cyan-400', index, className }) {
     return (
         <motion.div
             variants={itemVariants}
@@ -131,7 +132,7 @@ function StatCard({ icon: Icon, title, value, subtitle, colorClass = 'text-skyjo
                 <div className="flex items-start justify-between mb-4">
                     <div className={cn(
                         "p-3 rounded-xl transition-colors group-hover:scale-110 duration-300",
-                        colorClass === 'text-skyjo-blue' ? 'bg-blue-500/10 text-skyjo-blue' :
+                        colorClass === 'text-cyan-400' ? 'bg-cyan-500/10 text-cyan-400' :
                             colorClass.replace('text-', 'bg-').replace('600', '500/10').replace('500', '500/10').replace('400', '500/10') + " " + colorClass
                     )}>
                         <Icon className="h-6 w-6" />
@@ -272,7 +273,7 @@ export default function Stats() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `skyjo-stats-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `skybrick-stats-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -337,9 +338,20 @@ export default function Stats() {
                     animate="visible"
                     className="space-y-8"
                 >
+                    {/* Progression & Rewards */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-1">
+                            <RewardsTrack />
+                        </div>
+                        <div className="lg:col-span-2">
+                            <AchievementsList />
+                        </div>
+                    </div>
+
                     {/* PODIUM Section (Top 3) */}
                     {playerStats.length > 0 && (
-                        <div className="relative">
+                        <div className="relative pt-12">
+                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-2 mb-8 text-center">Classement des Légendes</h4>
                             <Podium players={playerStats.slice(0, 3)} />
                         </div>
                     )}
